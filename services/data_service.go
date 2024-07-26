@@ -24,7 +24,7 @@ func (obj *DataService) AddData(new_data models.Data) error {
 	if data != nil {
 		return errors.New("Already exists")
 	}
-	if err != nil && err.Error() != "NOT FOUND" {
+	if err != nil && err.Error() != "DATA NOT FOUND" {
 		return err
 	}
 
@@ -60,7 +60,7 @@ func (obj *DataService) GetData(name string) (*models.Data, error) {
 			return &data, nil
 		}
 	}
-	return nil, errors.New("NOT FOUND")
+	return nil, errors.New("DATA NOT FOUND")
 }
 
 func (obj *DataService) GetAllData() ([]models.Data, error) {
