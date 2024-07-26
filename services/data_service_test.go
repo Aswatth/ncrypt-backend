@@ -144,3 +144,61 @@ func TestDeleteData_FAIL(t *testing.T) {
 
 	os.Remove("delete_data_fail_test.txt")
 }
+
+func TestUpdateData_PASS(t *testing.T) {
+	data_service := new(DataService)
+
+	data_service.Init("update_data_pass_test.txt")
+
+	data := &models.Data{Name: "test", Contents: []models.Content{{Name: "id", Value: "test_id"}, {Name: "password", Value: "12345"}}}
+
+	data_service.AddData(*data)
+
+	updated_data := &models.Data{Name: "test2", Contents: []models.Content{{Name: "id", Value: "test_id"}}}
+
+	err := data_service.UpdateData(data.Name, *updated_data)
+
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	fetched_data, err := data_service.GetData(updated_data.Name)
+
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	if fetched_data.Name == updated_data.Name {
+		for j := range updated_data.Contents {
+			if (updated_data.Contents[j].Name != fetched_data.Contents[j].Name) || (updated_data.Contents[j].Value != fetched_data.Contents[j].Value) {
+				t.Errorf("Mismatch in content")
+			}
+		}
+	}
+
+	os.Remove("update_data_pass_test.txt")
+}
+
+func TestUpdateData_FAIL(t *testing.T) {
+	data_service := new(DataService)
+
+	data_service.Init("update_data_fail_test.txt")
+
+	data_list := []models.Data{{Name: "test1", Contents: []models.Content{{Name: "id", Value: "test_id"}, {Name: "password", Value: "12345"}}}, {Name: "test2", Contents: []models.Content{{Name: "id", Value: "test_id"}, {Name: "password", Value: "12345"}}}}
+
+	for _, data := range data_list {
+		data_service.AddData(data)
+	}
+
+	updated_data := &models.Data{Name: "test2", Contents: []models.Content{{Name: "id", Value: "test_id"}}}
+
+	err := data_service.UpdateData(data_list[0].Name, *updated_data)
+
+	if err != nil {
+		if err.Error() != "DATA NAME ALREADY EXISTS" {
+			t.Errorf(err.Error())
+		}
+	}
+
+	os.Remove("update_data_fail_test.txt")
+}

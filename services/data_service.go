@@ -114,3 +114,39 @@ func (obj *DataService) DeleteData(name string) error {
 
 	return file_handler.Save(obj.file_name, final_list_bytes)
 }
+
+func (obj *DataService) UpdateData(name string, new_data models.Data) error {
+	data_list, err := obj.GetAllData()
+
+	if err != nil {
+		return err
+	}
+
+
+	data, err := obj.GetData(new_data.Name)
+
+	if(err != nil) {
+		if(err.Error() != "DATA NOT FOUND") {
+				return err;
+		}
+	}
+
+	if(data != nil) {
+		return errors.New("DATA NAME ALREADY EXISTS")
+	}
+
+	for i := range len(data_list) {
+		if data_list[i].Name == name {
+			data_list[i] = new_data
+			break
+		}
+	}
+
+	final_list_bytes, err := json.Marshal(data_list)
+
+	if err != nil {
+		return err
+	}
+
+	return file_handler.Save(obj.file_name, final_list_bytes)
+}

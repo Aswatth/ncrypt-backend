@@ -227,3 +227,75 @@ func TestDeleteData_FAIL(t *testing.T) {
 
 	os.Remove("delete_data_fail_test.txt")
 }
+
+func TestUpdateData_PASS(t *testing.T) {
+	data_service := new(services.DataService)
+	data_service.Init("update_data_pass_test.txt")
+
+	data_controller := new(DataController)
+	data_controller.Init(data_service)
+
+	data := models.Data{Name: "test1", Contents: []models.Content{{Name: "id", Value: "test_id"}, {Name: "password", Value: "12345"}}}
+
+	data_service.AddData(data)
+
+	updated_data := models.Data{Name: "test2", Contents: []models.Content{{Name: "id", Value: "test_id"}}}
+	updated_data_bytes, _ := json.Marshal(updated_data)
+
+	server := gin.Default()
+	test := httptest.NewRecorder()
+
+	server.PUT("/data/:name", data_controller.UpdateData)
+	req, _ := http.NewRequest("PUT", "/data/"+data.Name, bytes.NewReader(updated_data_bytes))
+
+	server.ServeHTTP(test, req)
+
+	if test.Code != 200 {
+		var error_message string
+
+		json.Unmarshal(test.Body.Bytes(), &error_message)
+
+		t.Errorf(error_message)
+	}
+
+	os.Remove("update_data_pass_test.txt")
+}
+
+func TestUpdateData_FAIL(t *testing.T) {
+	data_service := new(services.DataService)
+	data_service.Init("update_data_fail_test.txt")
+
+	data_controller := new(DataController)
+	data_controller.Init(data_service)
+
+	data_list := []models.Data{{Name: "test1", Contents: []models.Content{{Name: "id", Value: "test_id"}, {Name: "password", Value: "12345"}}}, {Name: "test2", Contents: []models.Content{{Name: "id", Value: "test_id"}, {Name: "password", Value: "12345"}}}}
+
+	for _, data := range data_list {
+		data_service.AddData(data)
+	}
+
+	updated_data := models.Data{Name: "test2", Contents: []models.Content{{Name: "id", Value: "test_id"}}}
+	updated_data_bytes, _ := json.Marshal(updated_data)
+
+	server := gin.Default()
+	test := httptest.NewRecorder()
+
+	server.PUT("/data/:name", data_controller.UpdateData)
+	req, _ := http.NewRequest("PUT", "/data/"+data_list[0].Name, bytes.NewReader(updated_data_bytes))
+
+	server.ServeHTTP(test, req)
+
+	if test.Code != 200 {
+		var error_message string
+		json.Unmarshal(test.Body.Bytes(), &error_message)
+
+		if error_message != "DATA NAME ALREADY EXISTS" {
+			t.Errorf(error_message)
+		}
+	} else {
+		t.Errorf("SHOULD NOT UPDATE")
+		t.Fail()
+	}
+
+	os.Remove("update_data_fail_test.txt")
+}

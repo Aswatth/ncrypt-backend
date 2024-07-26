@@ -72,10 +72,30 @@ func (obj *DataController) DeleteData(ctx *gin.Context) {
 	ctx.Status(http.StatusOK)
 }
 
+func (obj *DataController) UpdateData(ctx *gin.Context) {
+	var new_data models.Data
+
+	//Check if given JSON is valid
+	if err := ctx.ShouldBindJSON(&new_data); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	err := obj.service.UpdateData(ctx.Param("name"), new_data)
+
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	ctx.Status(http.StatusOK)
+}
+
 func (obj *DataController) RegisterRoutes(rg *gin.RouterGroup) {
 	group := rg.Group("/data")
 
 	group.POST("", obj.AddData)
 	group.GET("", obj.GetAllData)
 	group.DELETE("/:name", obj.DeleteData)
+	group.PUT("/:name", obj.UpdateData)
 }
