@@ -106,3 +106,41 @@ func TestGetData_FAIL(t *testing.T) {
 
 	os.Remove("get_data_fail_test.txt")
 }
+
+func TestDeleteData_PASS(t *testing.T) {
+	data_service := new(DataService)
+
+	data_service.Init("delete_data_pass_test.txt")
+
+	data := &models.Data{Name: "test", Contents: []models.Content{{Name: "id", Value: "test_id"}, {Name: "password", Value: "12345"}}}
+
+	data_service.AddData(*data)
+
+	err := data_service.DeleteData(data.Name)
+
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	os.Remove("delete_data_pass_test.txt")
+}
+
+func TestDeleteData_FAIL(t *testing.T) {
+	data_service := new(DataService)
+
+	data_service.Init("delete_data_fail_test.txt")
+
+	data := &models.Data{Name: "test", Contents: []models.Content{{Name: "id", Value: "test_id"}, {Name: "password", Value: "12345"}}}
+
+	data_service.AddData(*data)
+
+	err := data_service.DeleteData("random_name")
+
+	if err != nil {
+		if err.Error() != "DATA NOT FOUND" {
+			t.Errorf(err.Error())
+		}
+	}
+
+	os.Remove("delete_data_fail_test.txt")
+}

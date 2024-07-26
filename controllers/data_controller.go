@@ -61,9 +61,21 @@ func (obj *DataController) GetAllData(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, data)
 }
 
+func (obj *DataController) DeleteData(ctx *gin.Context) {
+	err := obj.service.DeleteData(ctx.Param("name"))
+
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	ctx.Status(http.StatusOK)
+}
+
 func (obj *DataController) RegisterRoutes(rg *gin.RouterGroup) {
 	group := rg.Group("/data")
 
 	group.POST("", obj.AddData)
 	group.GET("", obj.GetAllData)
+	group.DELETE("/:name", obj.DeleteData)
 }

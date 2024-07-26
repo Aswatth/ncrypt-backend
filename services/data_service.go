@@ -86,3 +86,31 @@ func (obj *DataService) GetAllData() ([]models.Data, error) {
 
 	return data_list, nil
 }
+
+func (obj *DataService) DeleteData(name string) error {
+	data_list, err := obj.GetAllData()
+
+	if err != nil {
+		return err
+	}
+
+	final_list := []models.Data{}
+
+	for _, data := range data_list {
+		if data.Name != name {
+			final_list = append(final_list, data)
+		}
+	}
+
+	if len(final_list) == len(data_list) {
+		return errors.New("DATA NOT FOUND")
+	}
+
+	final_list_bytes, err := json.Marshal(final_list)
+
+	if err != nil {
+		return err
+	}
+
+	return file_handler.Save(obj.file_name, final_list_bytes)
+}

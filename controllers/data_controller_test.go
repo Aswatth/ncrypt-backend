@@ -167,3 +167,63 @@ func TestGetData_FAIL(t *testing.T) {
 
 	os.Remove("get_data_fail_test.txt")
 }
+
+func TestDeleteData_PASS(t *testing.T) {
+	data_service := new(services.DataService)
+	data_service.Init("delete_data_pass_test.txt")
+
+	data_controller := new(DataController)
+	data_controller.Init(data_service)
+
+	expected_data := models.Data{Name: "test1", Contents: []models.Content{{Name: "id", Value: "test_id"}, {Name: "password", Value: "12345"}}}
+
+	data_service.AddData(expected_data)
+
+	server := gin.Default()
+	test := httptest.NewRecorder()
+
+	server.DELETE("/data/:name", data_controller.DeleteData)
+	req, _ := http.NewRequest("DELETE", "/data/"+expected_data.Name, bytes.NewReader([]byte{}))
+
+	server.ServeHTTP(test, req)
+
+	if test.Code != 200 {
+		var error_message string
+		json.Unmarshal(test.Body.Bytes(), &error_message)
+		t.Errorf(error_message)
+	}
+
+	os.Remove("delete_data_pass_test.txt")
+}
+
+func TestDeleteData_FAIL(t *testing.T) {
+	data_service := new(services.DataService)
+	data_service.Init("delete_data_fail_test.txt")
+
+	data_controller := new(DataController)
+	data_controller.Init(data_service)
+
+	expected_data := models.Data{Name: "test1", Contents: []models.Content{{Name: "id", Value: "test_id"}, {Name: "password", Value: "12345"}}}
+
+	data_service.AddData(expected_data)
+
+	server := gin.Default()
+	test := httptest.NewRecorder()
+
+	server.DELETE("/data/:name", data_controller.DeleteData)
+	req, _ := http.NewRequest("DELETE", "/data/random_name", bytes.NewReader([]byte{}))
+
+	server.ServeHTTP(test, req)
+
+	if test.Code != 200 {
+		var error_message string
+
+		json.Unmarshal(test.Body.Bytes(), &error_message)
+
+		if error_message != "DATA NOT FOUND" {
+			t.Errorf(error_message)
+		}
+	}
+
+	os.Remove("delete_data_fail_test.txt")
+}
