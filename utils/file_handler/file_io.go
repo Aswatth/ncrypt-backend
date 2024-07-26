@@ -10,6 +10,9 @@ func Read(file_name string) ([]byte, error) {
 	file, err := os.Open(file_name)
 
 	if err != nil {
+		if err.Error() == "open "+file_name+": The system cannot find the file specified." {
+			return []byte{}, nil
+		}
 		return nil, err
 	}
 
