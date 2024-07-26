@@ -99,7 +99,7 @@ func TestGetData_FAIL(t *testing.T) {
 	_, err := data_service.GetData("random_name")
 
 	if err != nil {
-		if err.Error() != "NOT FOUND" {
+		if err.Error() != "DATA NOT FOUND" {
 			t.Errorf(err.Error())
 		}
 	}
