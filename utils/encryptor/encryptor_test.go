@@ -10,7 +10,7 @@ func TestEncrypt(t *testing.T) {
 
 	encrypted_text := Encrypt(plain_text, key)
 
-	if encrypted_text == ""{
+	if encrypted_text == "" {
 		t.Errorf("Encryption failed")
 	}
 }
@@ -23,6 +23,6 @@ func TestDecrypt(t *testing.T) {
 	decrypted_text := Decrypt(encrypted_text, key)
 
 	if plain_text != decrypted_text {
-		t.Errorf("Decryption")
+		t.Errorf("Decryption failed")
 	}
 }
