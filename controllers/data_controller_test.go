@@ -55,7 +55,7 @@ func TestGetAllData(t *testing.T) {
 	server := gin.Default()
 	test := httptest.NewRecorder()
 
-	server.GET("/data", data_controller.GetData)
+	server.GET("/data", data_controller.GetAllData)
 	req, _ := http.NewRequest("GET", "/data", bytes.NewReader([]byte{}))
 
 	server.ServeHTTP(test, req)
@@ -84,8 +84,86 @@ func TestGetAllData(t *testing.T) {
 			}
 		}
 	} else {
-		t.Errorf("Failed to fetch all data")
+		var result string
+		json.Unmarshal(test.Body.Bytes(), &result)
+		t.Errorf(result)
 	}
 
 	os.Remove("get_all_data_test.txt")
+}
+
+func TestGetData_PASS(t *testing.T) {
+	data_service := new(services.DataService)
+	data_service.Init("get_data_pass_test.txt")
+
+	data_controller := new(DataController)
+	data_controller.Init(data_service)
+
+	expected_data := models.Data{Name: "test1", Contents: []models.Content{{Name: "id", Value: "test_id"}, {Name: "password", Value: "12345"}}}
+
+	data_service.AddData(expected_data)
+
+	server := gin.Default()
+	test := httptest.NewRecorder()
+
+	server.GET("/data", data_controller.GetData)
+	req, _ := http.NewRequest("GET", "/data?name="+expected_data.Name, bytes.NewReader([]byte{}))
+
+	server.ServeHTTP(test, req)
+
+	if test.Code == 200 {
+		var actual_data models.Data
+
+		json.Unmarshal(test.Body.Bytes(), &actual_data)
+
+		if actual_data.Name == expected_data.Name {
+			for j := range expected_data.Contents {
+				if (expected_data.Contents[j].Name != actual_data.Contents[j].Name) || (expected_data.Contents[j].Value != actual_data.Contents[j].Value) {
+					t.Errorf("Mismatch in content")
+				}
+			}
+		}
+	} else {
+		var result string
+		json.Unmarshal(test.Body.Bytes(), &result)
+		t.Errorf(result)
+	}
+
+	os.Remove("get_data_pass_test.txt")
+}
+
+func TestGetData_FAIL(t *testing.T) {
+	data_service := new(services.DataService)
+	data_service.Init("get_data_fail_test.txt")
+
+	data_controller := new(DataController)
+	data_controller.Init(data_service)
+
+	expected_data := models.Data{Name: "test1", Contents: []models.Content{{Name: "id", Value: "test_id"}, {Name: "password", Value: "12345"}}}
+
+	data_service.AddData(expected_data)
+
+	server := gin.Default()
+	test := httptest.NewRecorder()
+
+	server.GET("/data", data_controller.GetData)
+	req, _ := http.NewRequest("GET", "/data?name=random_name", bytes.NewReader([]byte{}))
+
+	server.ServeHTTP(test, req)
+
+	if test.Code != 200 {
+		var actual_data string
+
+		json.Unmarshal(test.Body.Bytes(), &actual_data)
+
+		if actual_data != "NOT FOUND" {
+			t.Errorf("INCORRECT ERROR")
+		}
+	} else {
+		var result string
+		json.Unmarshal(test.Body.Bytes(), &result)
+		t.Errorf(result)
+	}
+
+	os.Remove("get_data_fail_test.txt")
 }
