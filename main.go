@@ -2,25 +2,38 @@ package main
 
 import (
 	"fmt"
-	"ncrypt/encryptor"
+	"log"
+	"ncrypt/controllers"
+	"ncrypt/services"
+	"net/http"
 	"os"
 
+	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
 func main() {
 	fmt.Println("Welcome to Ncrpyt")
+	log.SetFlags(log.Lshortfile | log.LstdFlags)
 
+	//Loading env
 	godotenv.Load()
 
 	env := os.Getenv("PORT")
 
-	fmt.Println(env)
+	//web server
+	server := gin.Default()
 
-	key := "12345"
-	e := encryptor.Encrypt("Hello!123", key)
-	d := encryptor.Decrypt(e, key)
+	server.GET("/test", func(ctx *gin.Context) {
+		ctx.JSON(http.StatusOK, "I am alive")
+	})
 
-	fmt.Println(e)
-	fmt.Println(d)
+	base_path := server.Group("")
+
+	data_service := new(services.DataService).Init(os.Getenv("FILE_NAME"))
+	data_controller := new(controllers.DataController)
+	data_controller.Init(data_service)
+	data_controller.RegisterRoutes(base_path)
+
+	server.Run(":" + env)
 }
