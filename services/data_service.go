@@ -2,6 +2,7 @@ package services
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"ncrypt/models"
 	"ncrypt/utils/file_handler"
@@ -38,6 +39,21 @@ func (obj *DataService) AddData(new_data models.Data) error {
 
 }
 
+func (obj *DataService) GetData(name string) (*models.Data, error) {
+	data_list, err := obj.GetAllData()
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, data := range data_list {
+		if data.Name == name {
+			return &data, nil
+		}
+	}
+	return nil, errors.New("NOT FOUND")
+}
+
 func (obj *DataService) GetAllData() ([]models.Data, error) {
 	fetched_data, err := file_handler.Read(obj.file_name)
 
@@ -46,7 +62,7 @@ func (obj *DataService) GetAllData() ([]models.Data, error) {
 		return nil, err
 	}
 
-	if(len(fetched_data)== 0){
+	if len(fetched_data) == 0 {
 		return []models.Data{}, nil
 	}
 
