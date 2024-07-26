@@ -156,7 +156,7 @@ func TestGetData_FAIL(t *testing.T) {
 
 		json.Unmarshal(test.Body.Bytes(), &actual_data)
 
-		if actual_data != "NOT FOUND" {
+		if actual_data != "DATA NOT FOUND" {
 			t.Errorf("INCORRECT ERROR")
 		}
 	} else {
