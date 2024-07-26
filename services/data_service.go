@@ -19,6 +19,15 @@ func (obj *DataService) Init(file_name string) *DataService {
 
 func (obj *DataService) AddData(new_data models.Data) error {
 
+	data, err := obj.GetData(new_data.Name)
+
+	if data != nil {
+		return errors.New("Already exists")
+	}
+	if err != nil && err.Error() != "NOT FOUND" {
+		return err
+	}
+
 	existing_data, err := obj.GetAllData()
 
 	if err != nil {
