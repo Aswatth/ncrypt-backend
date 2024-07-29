@@ -8,14 +8,15 @@ import (
 	"encoding/hex"
 	"io"
 )
-func createHash(data_to_hash string) string {
+
+func CreateHash(data_to_hash string) string {
 	hasher := md5.New()
 	hasher.Write([]byte(data_to_hash))
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
 func Encrypt(data_to_encrypt string, key string) string {
-	block, _ := aes.NewCipher([]byte(createHash(key)))
+	block, _ := aes.NewCipher([]byte(CreateHash(key)))
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
 		panic(err.Error())
@@ -29,7 +30,7 @@ func Encrypt(data_to_encrypt string, key string) string {
 }
 
 func Decrypt(encrypted_data string, key string) string {
-	block, err := aes.NewCipher([]byte(createHash(key)))
+	block, err := aes.NewCipher([]byte(CreateHash(key)))
 	if err != nil {
 		panic(err.Error())
 	}
