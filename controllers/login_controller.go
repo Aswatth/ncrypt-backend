@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"ncrypt/models"
 	"ncrypt/services"
 	"net/http"
@@ -52,6 +53,22 @@ func (obj *LoginController) GetLoginData(ctx *gin.Context) {
 	}
 }
 
+func (obj *LoginController) GetAccountPassword(ctx *gin.Context) {
+	login_data_name := ctx.Param("name")
+	account_username := ctx.Query("username")
+
+	fmt.Println(login_data_name, account_username)
+
+	password, err := obj.service.GetDecryptedAccountPassword(login_data_name, account_username)
+
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	ctx.JSON(http.StatusOK, password)
+}
+
 func (obj *LoginController) DeleteLoginData(ctx *gin.Context) {
 	name := ctx.Param("name")
 
@@ -85,7 +102,10 @@ func (obj *LoginController) RegisterRoutes(rg *gin.RouterGroup) {
 	group := rg.Group("/login")
 
 	group.POST("", obj.CreateLogin)
+
 	group.GET("", obj.GetLoginData)
+	group.GET("/:name", obj.GetAccountPassword)
+
 	group.DELETE("/:name", obj.DeleteLoginData)
 	group.PUT("/:name", obj.UpdateLoginData)
 }
