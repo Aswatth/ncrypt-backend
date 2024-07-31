@@ -1,6 +1,8 @@
 package services
 
 import (
+	"ncrypt/utils/encryptor"
+	"os"
 	"testing"
 )
 
@@ -15,6 +17,8 @@ func TestSetMasterPassword(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
+
+	err = os.RemoveAll(os.Getenv("MASTER_PASSWORD_DB_NAME"))
 }
 
 func TestSetMasterPassword_RESET(t *testing.T) {
@@ -44,6 +48,8 @@ func TestSetMasterPassword_RESET(t *testing.T) {
 	if !result {
 		t.Errorf("Expected: %t\nActual: %t", true, result)
 	}
+
+	err = os.RemoveAll(os.Getenv("MASTER_PASSWORD_DB_NAME"))
 }
 
 func TestValidateMasterPassword_PASS(t *testing.T) {
@@ -67,6 +73,8 @@ func TestValidateMasterPassword_PASS(t *testing.T) {
 	if !result {
 		t.Errorf("Expected: %t\nActual: %t", true, result)
 	}
+
+	err = os.RemoveAll(os.Getenv("MASTER_PASSWORD_DB_NAME"))
 }
 
 func TestValidateMasterPassword_FAIL(t *testing.T) {
@@ -92,4 +100,29 @@ func TestValidateMasterPassword_FAIL(t *testing.T) {
 	if result {
 		t.Errorf("Expected: %t\nActual: %t", false, result)
 	}
+
+	err = os.RemoveAll(os.Getenv("MASTER_PASSWORD_DB_NAME"))
+}
+
+func TestGetMasterPassword(t *testing.T) {
+	password := "12345"
+
+	hashed_password := encryptor.CreateHash(password)
+
+	service := new(MasterPasswordService)
+	service.Init()
+
+	service.SetMasterPassword(password)
+
+	stored_password, err := service.GetMasterPassword()
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	if stored_password != hashed_password {
+		t.Error("Password mismatch")
+	}
+
+	err = os.RemoveAll(os.Getenv("MASTER_PASSWORD_DB_NAME"))
 }
