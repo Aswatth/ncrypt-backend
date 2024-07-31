@@ -53,5 +53,5 @@ func (obj *MasterPasswordController) RegisterRoutes(rg *gin.RouterGroup) {
 	group := rg.Group("master_password")
 
 	group.POST("", obj.SetPassword)
-	group.GET("", obj.Validate)
+	group.POST("/validate", obj.Validate)
 }
