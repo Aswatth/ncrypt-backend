@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"ncrypt/models"
+	"ncrypt/utils/encryptor"
 	"os"
 	"strings"
 
@@ -12,10 +13,15 @@ import (
 )
 
 type LoginService struct {
+	master_password_service MasterPasswordService
 }
 
 func (obj *LoginService) Init() {
 	godotenv.Load("../.env")
+	master_password_service := new(MasterPasswordService)
+
+	obj.master_password_service = *master_password_service
+	obj.master_password_service.Init()
 }
 
 func (obj *LoginService) GetLoginData(name string) (*models.Login, error) {
@@ -100,6 +106,21 @@ func (obj *LoginService) setLoginData(login_data *models.Login) error {
 		return err
 	}
 	defer db.Close()
+
+	//Ecnrypt login_data - account_passwords
+	// Get master password
+	master_password_hash, err := obj.master_password_service.GetMasterPassword()
+
+	if err != nil {
+		if strings.ToUpper(err.Error()) == "KEY NOT FOUND" {
+			return errors.New("master_password not set")
+		}
+		return err
+	}
+
+	for index := range len(login_data.Accounts) {
+		login_data.Accounts[index].Password = encryptor.Encrypt(login_data.Accounts[index].Password, master_password_hash)
+	}
 
 	login_bytes, err := json.Marshal(login_data)
 
