@@ -19,6 +19,10 @@ func TestSetMasterPassword(t *testing.T) {
 	}
 
 	err = os.RemoveAll(os.Getenv("MASTER_PASSWORD_DB_NAME"))
+
+	if err != nil {
+		t.Error(err.Error())
+	}
 }
 
 func TestSetMasterPassword_RESET(t *testing.T) {
@@ -50,6 +54,10 @@ func TestSetMasterPassword_RESET(t *testing.T) {
 	}
 
 	err = os.RemoveAll(os.Getenv("MASTER_PASSWORD_DB_NAME"))
+
+	if err != nil {
+		t.Error(err.Error())
+	}
 }
 
 func TestValidateMasterPassword_PASS(t *testing.T) {
@@ -75,6 +83,10 @@ func TestValidateMasterPassword_PASS(t *testing.T) {
 	}
 
 	err = os.RemoveAll(os.Getenv("MASTER_PASSWORD_DB_NAME"))
+
+	if err != nil {
+		t.Error(err.Error())
+	}
 }
 
 func TestValidateMasterPassword_FAIL(t *testing.T) {
@@ -102,6 +114,10 @@ func TestValidateMasterPassword_FAIL(t *testing.T) {
 	}
 
 	err = os.RemoveAll(os.Getenv("MASTER_PASSWORD_DB_NAME"))
+
+	if err != nil {
+		t.Error(err.Error())
+	}
 }
 
 func TestGetMasterPassword(t *testing.T) {
@@ -125,4 +141,8 @@ func TestGetMasterPassword(t *testing.T) {
 	}
 
 	err = os.RemoveAll(os.Getenv("MASTER_PASSWORD_DB_NAME"))
+
+	if err != nil {
+		t.Error(err.Error())
+	}
 }
