@@ -57,6 +57,35 @@ func (obj *LoginService) GetLoginData(name string) (*models.Login, error) {
 	return &login_data, nil
 }
 
+func (obj *LoginService) GetDecryptedAccountPassword(login_data_name string, account_username string) (string, error) {
+	fetched_login_data, err := obj.GetLoginData(login_data_name)
+
+	if err != nil {
+		return "", err
+	}
+
+	var decrypted_password string
+	for _, account := range fetched_login_data.Accounts {
+		if account.Username == account_username {
+			master_password_hash, err := obj.master_password_service.GetMasterPassword()
+
+			if err != nil {
+				return "", err
+			}
+
+			decrypted_password = encryptor.Decrypt(account.Password, master_password_hash)
+
+			break
+		}
+	}
+
+	if decrypted_password == "" {
+		return "", errors.New("account username not found")
+	}
+
+	return decrypted_password, nil
+}
+
 func (obj *LoginService) GetAllLoginData() ([]models.Login, error) {
 	db, err := badger.Open(badger.DefaultOptions(os.Getenv("LOGIN_DB_NAME")))
 
