@@ -5,6 +5,7 @@ import (
 	"crypto/cipher"
 	"crypto/md5"
 	"crypto/rand"
+	"encoding/base64"
 	"encoding/hex"
 	"io"
 )
@@ -16,7 +17,10 @@ func CreateHash(data_to_hash string) string {
 }
 
 func Encrypt(data_to_encrypt string, key string) string {
-	block, _ := aes.NewCipher([]byte(CreateHash(key)))
+	if len(key) != 32 {
+		key = CreateHash(key)
+	}
+	block, _ := aes.NewCipher([]byte(key))
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
 		panic(err.Error())
@@ -26,11 +30,15 @@ func Encrypt(data_to_encrypt string, key string) string {
 		panic(err.Error())
 	}
 	ciphertext := gcm.Seal(nonce, nonce, []byte(data_to_encrypt), nil)
-	return string(ciphertext[:])
+	return base64.StdEncoding.EncodeToString(ciphertext)
 }
 
 func Decrypt(encrypted_data string, key string) string {
-	block, err := aes.NewCipher([]byte(CreateHash(key)))
+	encrypted_data_bytes, _ := base64.StdEncoding.DecodeString(encrypted_data)
+	if len(key) != 32 {
+		key = CreateHash(key)
+	}
+	block, err := aes.NewCipher([]byte(key))
 	if err != nil {
 		panic(err.Error())
 	}
@@ -39,7 +47,7 @@ func Decrypt(encrypted_data string, key string) string {
 		panic(err.Error())
 	}
 	nonceSize := gcm.NonceSize()
-	nonce, ciphertext := []byte(encrypted_data[:nonceSize]), []byte(encrypted_data[nonceSize:])
+	nonce, ciphertext := encrypted_data_bytes[:nonceSize], encrypted_data_bytes[nonceSize:]
 	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
 		panic(err.Error())
