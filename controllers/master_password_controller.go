@@ -21,9 +21,12 @@ func (obj *MasterPasswordController) SetPassword(ctx *gin.Context) {
 	if err := ctx.ShouldBindJSON(&data); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
 		return
-	} else {
-		obj.service.SetMasterPassword(data["master_password"])
+	} else if err := obj.service.SetMasterPassword(data["master_password"]); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		return
 	}
+
+	ctx.Status(http.StatusOK)
 }
 
 func (obj *MasterPasswordController) Validate(ctx *gin.Context) {
