@@ -26,7 +26,7 @@ func (obj *MasterPasswordService) SetMasterPassword(password string) error {
 	password = encryptor.CreateHash(password)
 
 	err = db.Update(func(txn *badger.Txn) error {
-		err := txn.Set([]byte(os.Getenv("MASTER_PASSOWRD_KEY")), []byte(password))
+		err := txn.Set([]byte(os.Getenv("MASTER_PASSWORD_KEY")), []byte(password))
 
 		return err
 	})
@@ -58,7 +58,7 @@ func (obj *MasterPasswordService) GetMasterPassword() (string, error) {
 
 	var stored_password string
 	err = db.View(func(txn *badger.Txn) error {
-		item, err := txn.Get([]byte(os.Getenv("MASTER_PASSOWRD_KEY")))
+		item, err := txn.Get([]byte(os.Getenv("MASTER_PASSWORD_KEY")))
 
 		if err != nil {
 			return err
