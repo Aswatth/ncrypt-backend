@@ -136,6 +136,17 @@ func (obj *LoginService) setLoginData(login_data *models.Login) error {
 	}
 	defer db.Close()
 
+	//Check for duplicate account-username
+	account_username_map := make(map[string]bool)
+
+	for _, account := range login_data.Accounts {
+		if !account_username_map[account.Username] {
+			account_username_map[account.Username] = true
+		} else {
+			return errors.New("duplicate username " + account.Username)
+		}
+	}
+
 	//Ecnrypt login_data - account_passwords
 	// Get master password
 	master_password_hash, err := obj.master_password_service.GetMasterPassword()
