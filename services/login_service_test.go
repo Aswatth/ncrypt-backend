@@ -62,6 +62,29 @@ func TestAddLoginData_With_Master_Password(t *testing.T) {
 	cleanup_login_test()
 }
 
+func TestAddLoginData_Duplicate_Account_Username(t *testing.T) {
+	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "abc", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+
+	master_password_service := new(MasterPasswordService)
+	master_password_service.Init()
+
+	master_password_service.SetMasterPassword("12345")
+
+	login_service := new(LoginService)
+	login_service.Init()
+
+	err := login_service.AddLoginData(login_data)
+
+	if err != nil {
+		if strings.ToUpper(err.Error()) != "DUPLICATE USERNAME ABC" {
+			t.Error(err.Error())
+		}
+	}
+
+	//Clean up
+	cleanup_login_test()
+}
+
 func TestAddLoginData_Without_Master_Password(t *testing.T) {
 	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
 
