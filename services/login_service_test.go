@@ -2,6 +2,8 @@ package services
 
 import (
 	"ncrypt/models"
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/dgraph-io/badger/v4"
@@ -26,13 +28,27 @@ func compareLoginData(t *testing.T, expected_login_data models.Login, actual_log
 	}
 }
 
-func TestAddLoginData(t *testing.T) {
+func cleanup_login_test() {
+	os.RemoveAll(os.Getenv("LOGIN_DB_NAME"))
+	os.RemoveAll(os.Getenv("MASTER_PASSWORD_DB_NAME"))
+}
+
+func TestAddLoginData_With_Master_Password(t *testing.T) {
 	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+
+	master_password_service := new(MasterPasswordService)
+	master_password_service.Init()
+
+	master_password_service.SetMasterPassword("12345")
 
 	login_service := new(LoginService)
 	login_service.Init()
 
-	login_service.AddLoginData(login_data)
+	err := login_service.AddLoginData(login_data)
+
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	fetched_data, err := login_service.GetLoginData(login_data.Name)
 
@@ -43,11 +59,33 @@ func TestAddLoginData(t *testing.T) {
 	compareLoginData(t, *login_data, *fetched_data)
 
 	//Clean up
-	login_service.DeleteLogin(login_data.Name)
+	cleanup_login_test()
+}
+
+func TestAddLoginData_Without_Master_Password(t *testing.T) {
+	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+
+	login_service := new(LoginService)
+	login_service.Init()
+
+	err := login_service.AddLoginData(login_data)
+
+	if err != nil {
+		if strings.ToUpper(err.Error()) != "MASTER_PASSWORD NOT SET" {
+			t.Error(err.Error())
+		}
+	}
+
+	//Clean up
+	cleanup_login_test()
 }
 
 func TestAddLoginData_DuplicateData(t *testing.T) {
 	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+
+	master_password_service := new(MasterPasswordService)
+	master_password_service.Init()
+	master_password_service.SetMasterPassword("12345")
 
 	login_service := new(LoginService)
 	login_service.Init()
@@ -63,16 +101,23 @@ func TestAddLoginData_DuplicateData(t *testing.T) {
 	}
 
 	//Clean up
-	login_service.DeleteLogin(login_data.Name)
+	cleanup_login_test()
 }
 
 func TestGetLoginData(t *testing.T) {
 	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
 
+	master_password_service := new(MasterPasswordService)
+	master_password_service.Init()
+	master_password_service.SetMasterPassword("12345")
+
 	login_service := new(LoginService)
 	login_service.Init()
 
-	login_service.AddLoginData(login_data)
+	err := login_service.AddLoginData(login_data)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	fetched_data, err := login_service.GetLoginData(login_data.Name)
 
@@ -83,16 +128,24 @@ func TestGetLoginData(t *testing.T) {
 	compareLoginData(t, *login_data, *fetched_data)
 
 	//Clean up
-	login_service.DeleteLogin(login_data.Name)
+	cleanup_login_test()
 }
 
 func TestGetAllLoginData(t *testing.T) {
 	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
 
+	master_password_service := new(MasterPasswordService)
+	master_password_service.Init()
+	master_password_service.SetMasterPassword("12345")
+
 	login_service := new(LoginService)
 	login_service.Init()
 
-	login_service.AddLoginData(login_data)
+	err := login_service.AddLoginData(login_data)
+
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	fetched_data_list, err := login_service.GetAllLoginData()
 
@@ -107,11 +160,15 @@ func TestGetAllLoginData(t *testing.T) {
 	compareLoginData(t, *login_data, fetched_data_list[0])
 
 	//Clean up
-	login_service.DeleteLogin(login_data.Name)
+	cleanup_login_test()
 }
 
 func TestDeleteLoginData(t *testing.T) {
 	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+
+	master_password_service := new(MasterPasswordService)
+	master_password_service.Init()
+	master_password_service.SetMasterPassword("12345")
 
 	login_service := new(LoginService)
 	login_service.Init()
@@ -125,10 +182,16 @@ func TestDeleteLoginData(t *testing.T) {
 	if err != nil && err != badger.ErrKeyNotFound {
 		t.Error(err.Error())
 	}
+
+	cleanup_login_test()
 }
 
 func TestUpdateLoginData(t *testing.T) {
 	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+
+	master_password_service := new(MasterPasswordService)
+	master_password_service.Init()
+	master_password_service.SetMasterPassword("12345")
 
 	login_service := new(LoginService)
 	login_service.Init()
@@ -152,11 +215,15 @@ func TestUpdateLoginData(t *testing.T) {
 	compareLoginData(t, *login_data, *fetched_data)
 
 	//Clean up
-	login_service.DeleteLogin(login_data.Name)
+	cleanup_login_test()
 }
 
 func TestUpdateLoginData_ChangeName(t *testing.T) {
 	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+
+	master_password_service := new(MasterPasswordService)
+	master_password_service.Init()
+	master_password_service.SetMasterPassword("12345")
 
 	login_service := new(LoginService)
 	login_service.Init()
@@ -187,11 +254,15 @@ func TestUpdateLoginData_ChangeName(t *testing.T) {
 	}
 
 	//Clean up
-	login_service.DeleteLogin(updated_login_data.Name)
+	cleanup_login_test()
 }
 
 func TestUpdateLoginData_Fail(t *testing.T) {
 	login_data_list := []models.Login{{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}}, {Name: "email", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}}}
+
+	master_password_service := new(MasterPasswordService)
+	master_password_service.Init()
+	master_password_service.SetMasterPassword("12345")
 
 	login_service := new(LoginService)
 	login_service.Init()
@@ -209,7 +280,66 @@ func TestUpdateLoginData_Fail(t *testing.T) {
 	}
 
 	//Clean up
-	for _, login_data := range login_data_list {
-		login_service.DeleteLogin(login_data.Name)
+	cleanup_login_test()
+}
+
+func TestGetDecryptedAccountPassword_PASS(t *testing.T) {
+	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+	expected_password := login_data.Accounts[0].Password
+
+	master_password_service := new(MasterPasswordService)
+	master_password_service.Init()
+
+	master_password_service.SetMasterPassword("12345")
+
+	login_service := new(LoginService)
+	login_service.Init()
+
+	err := login_service.AddLoginData(login_data)
+
+	if err != nil {
+		t.Error(err.Error())
 	}
+
+	fetched_password, err := login_service.GetDecryptedAccountPassword(login_data.Name, login_data.Accounts[0].Username)
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	if fetched_password != expected_password {
+		t.Errorf("Expected: %s\nActual: %s", expected_password, fetched_password)
+	}
+
+	//Clean up
+	cleanup_login_test()
+}
+
+func TestGetDecryptedAccountPassword_FAIL(t *testing.T) {
+	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+
+	master_password_service := new(MasterPasswordService)
+	master_password_service.Init()
+
+	master_password_service.SetMasterPassword("12345")
+
+	login_service := new(LoginService)
+	login_service.Init()
+
+	err := login_service.AddLoginData(login_data)
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	_, err = login_service.GetDecryptedAccountPassword(login_data.Name, "ttt") //invalid username
+
+	if err != nil {
+		if strings.ToUpper(err.Error()) != "ACCOUNT USERNAME NOT FOUND" {
+			t.Error(err.Error())
+		}
+	}
+
+	//Clean up
+	cleanup_login_test()
 }
