@@ -30,11 +30,6 @@ func main() {
 
 	base_path := server.Group("")
 
-	data_service := new(services.DataService).Init(os.Getenv("FILE_NAME"))
-	data_controller := new(controllers.DataController)
-	data_controller.Init(data_service)
-	data_controller.RegisterRoutes(base_path)
-
 	login_service := new(services.LoginService)
 	login_service.Init()
 	login_controller := new(controllers.LoginController)
