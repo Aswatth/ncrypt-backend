@@ -13,6 +13,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func master_password_controller_test_cleanup() {
+	os.RemoveAll(os.Getenv("MASTER_PASSWORD_DB_NAME"))
+}
 func TestSetPassword(t *testing.T) {
 	password_data := make(map[string]string)
 
@@ -58,7 +61,7 @@ func TestSetPassword(t *testing.T) {
 		}
 	}
 
-	os.RemoveAll(os.Getenv("MASTER_PASSWORD_DB_NAME"))
+	t.Cleanup(master_password_controller_test_cleanup)
 }
 
 func TestSetPassword_RESET(t *testing.T) {
@@ -132,7 +135,7 @@ func TestSetPassword_RESET(t *testing.T) {
 		}
 	}
 
-	os.RemoveAll(os.Getenv("MASTER_PASSWORD_DB_NAME"))
+	t.Cleanup(master_password_controller_test_cleanup)
 }
 
 func TestValidatePassword_PASS(t *testing.T) {
@@ -171,7 +174,7 @@ func TestValidatePassword_PASS(t *testing.T) {
 		t.Error(data)
 	}
 
-	os.RemoveAll(os.Getenv("MASTER_PASSWORD_DB_NAME"))
+	t.Cleanup(master_password_controller_test_cleanup)
 }
 
 func TestValidatePassword_FAIL(t *testing.T) {
@@ -210,5 +213,5 @@ func TestValidatePassword_FAIL(t *testing.T) {
 		t.Error(data)
 	}
 
-	os.RemoveAll(os.Getenv("MASTER_PASSWORD_DB_NAME"))
+	t.Cleanup(master_password_controller_test_cleanup)
 }

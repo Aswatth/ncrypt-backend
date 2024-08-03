@@ -28,7 +28,7 @@ func compareLoginData(t *testing.T, expected_login_data models.Login, actual_log
 	}
 }
 
-func cleanup_login_test() {
+func login_service_test_cleanup() {
 	os.RemoveAll(os.Getenv("LOGIN_DB_NAME"))
 	os.RemoveAll(os.Getenv("MASTER_PASSWORD_DB_NAME"))
 }
@@ -59,7 +59,7 @@ func TestAddLoginData_With_Master_Password(t *testing.T) {
 	compareLoginData(t, *login_data, *fetched_data)
 
 	//Clean up
-	cleanup_login_test()
+	t.Cleanup(login_service_test_cleanup)
 }
 
 func TestAddLoginData_Duplicate_Account_Username(t *testing.T) {
@@ -82,7 +82,7 @@ func TestAddLoginData_Duplicate_Account_Username(t *testing.T) {
 	}
 
 	//Clean up
-	cleanup_login_test()
+	t.Cleanup(login_service_test_cleanup)
 }
 
 func TestAddLoginData_Without_Master_Password(t *testing.T) {
@@ -100,7 +100,7 @@ func TestAddLoginData_Without_Master_Password(t *testing.T) {
 	}
 
 	//Clean up
-	cleanup_login_test()
+	t.Cleanup(login_service_test_cleanup)
 }
 
 func TestAddLoginData_DuplicateData(t *testing.T) {
@@ -124,7 +124,7 @@ func TestAddLoginData_DuplicateData(t *testing.T) {
 	}
 
 	//Clean up
-	cleanup_login_test()
+	t.Cleanup(login_service_test_cleanup)
 }
 
 func TestGetLoginData(t *testing.T) {
@@ -151,7 +151,7 @@ func TestGetLoginData(t *testing.T) {
 	compareLoginData(t, *login_data, *fetched_data)
 
 	//Clean up
-	cleanup_login_test()
+	t.Cleanup(login_service_test_cleanup)
 }
 
 func TestGetAllLoginData(t *testing.T) {
@@ -183,7 +183,7 @@ func TestGetAllLoginData(t *testing.T) {
 	compareLoginData(t, *login_data, fetched_data_list[0])
 
 	//Clean up
-	cleanup_login_test()
+	t.Cleanup(login_service_test_cleanup)
 }
 
 func TestDeleteLoginData(t *testing.T) {
@@ -206,7 +206,7 @@ func TestDeleteLoginData(t *testing.T) {
 		t.Error(err.Error())
 	}
 
-	cleanup_login_test()
+	t.Cleanup(login_service_test_cleanup)
 }
 
 func TestUpdateLoginData(t *testing.T) {
@@ -238,7 +238,7 @@ func TestUpdateLoginData(t *testing.T) {
 	compareLoginData(t, *login_data, *fetched_data)
 
 	//Clean up
-	cleanup_login_test()
+	t.Cleanup(login_service_test_cleanup)
 }
 
 func TestUpdateLoginData_ChangeName(t *testing.T) {
@@ -277,7 +277,7 @@ func TestUpdateLoginData_ChangeName(t *testing.T) {
 	}
 
 	//Clean up
-	cleanup_login_test()
+	t.Cleanup(login_service_test_cleanup)
 }
 
 func TestUpdateLoginData_Fail(t *testing.T) {
@@ -303,7 +303,7 @@ func TestUpdateLoginData_Fail(t *testing.T) {
 	}
 
 	//Clean up
-	cleanup_login_test()
+	t.Cleanup(login_service_test_cleanup)
 }
 
 func TestGetDecryptedAccountPassword_PASS(t *testing.T) {
@@ -335,7 +335,7 @@ func TestGetDecryptedAccountPassword_PASS(t *testing.T) {
 	}
 
 	//Clean up
-	cleanup_login_test()
+	t.Cleanup(login_service_test_cleanup)
 }
 
 func TestGetDecryptedAccountPassword_FAIL(t *testing.T) {
@@ -364,5 +364,5 @@ func TestGetDecryptedAccountPassword_FAIL(t *testing.T) {
 	}
 
 	//Clean up
-	cleanup_login_test()
+	t.Cleanup(login_service_test_cleanup)
 }

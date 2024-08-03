@@ -6,6 +6,10 @@ import (
 	"testing"
 )
 
+func master_password_service_test_cleanup() {
+	os.RemoveAll(os.Getenv("MASTER_PASSWORD_DB_NAME"))
+}
+
 func TestSetMasterPassword(t *testing.T) {
 	new_password := map[string]string{"master_password": "12345"}
 
@@ -18,11 +22,7 @@ func TestSetMasterPassword(t *testing.T) {
 		t.Error(err.Error())
 	}
 
-	err = os.RemoveAll(os.Getenv("MASTER_PASSWORD_DB_NAME"))
-
-	if err != nil {
-		t.Error(err.Error())
-	}
+	t.Cleanup(master_password_service_test_cleanup)
 }
 
 func TestSetMasterPassword_RESET(t *testing.T) {
@@ -53,11 +53,7 @@ func TestSetMasterPassword_RESET(t *testing.T) {
 		t.Errorf("Expected: %t\nActual: %t", true, result)
 	}
 
-	err = os.RemoveAll(os.Getenv("MASTER_PASSWORD_DB_NAME"))
-
-	if err != nil {
-		t.Error(err.Error())
-	}
+	t.Cleanup(master_password_service_test_cleanup)
 }
 
 func TestValidateMasterPassword_PASS(t *testing.T) {
@@ -82,11 +78,7 @@ func TestValidateMasterPassword_PASS(t *testing.T) {
 		t.Errorf("Expected: %t\nActual: %t", true, result)
 	}
 
-	err = os.RemoveAll(os.Getenv("MASTER_PASSWORD_DB_NAME"))
-
-	if err != nil {
-		t.Error(err.Error())
-	}
+	t.Cleanup(master_password_service_test_cleanup)
 }
 
 func TestValidateMasterPassword_FAIL(t *testing.T) {
@@ -113,11 +105,7 @@ func TestValidateMasterPassword_FAIL(t *testing.T) {
 		t.Errorf("Expected: %t\nActual: %t", false, result)
 	}
 
-	err = os.RemoveAll(os.Getenv("MASTER_PASSWORD_DB_NAME"))
-
-	if err != nil {
-		t.Error(err.Error())
-	}
+	t.Cleanup(master_password_service_test_cleanup)
 }
 
 func TestGetMasterPassword(t *testing.T) {
@@ -140,9 +128,5 @@ func TestGetMasterPassword(t *testing.T) {
 		t.Error("Password mismatch")
 	}
 
-	err = os.RemoveAll(os.Getenv("MASTER_PASSWORD_DB_NAME"))
-
-	if err != nil {
-		t.Error(err.Error())
-	}
+	t.Cleanup(master_password_service_test_cleanup)
 }
