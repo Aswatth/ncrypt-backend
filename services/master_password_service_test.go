@@ -8,6 +8,7 @@ import (
 
 func master_password_service_test_cleanup() {
 	os.RemoveAll(os.Getenv("MASTER_PASSWORD_DB_NAME"))
+	os.RemoveAll("SYSTEM")
 }
 
 func TestSetMasterPassword(t *testing.T) {
@@ -25,7 +26,7 @@ func TestSetMasterPassword(t *testing.T) {
 	t.Cleanup(master_password_service_test_cleanup)
 }
 
-func TestSetMasterPassword_RESET(t *testing.T) {
+func TestUpdateMasterPassword(t *testing.T) {
 	new_password := map[string]string{"master_password": "12345"}
 
 	service := new(MasterPasswordService)
@@ -37,7 +38,7 @@ func TestSetMasterPassword_RESET(t *testing.T) {
 		t.Error(err.Error())
 	}
 
-	err = service.SetMasterPassword("123")
+	err = service.UpdateMasterPassword("123")
 
 	if err != nil {
 		t.Error(err.Error())
@@ -51,6 +52,43 @@ func TestSetMasterPassword_RESET(t *testing.T) {
 
 	if !result {
 		t.Errorf("Expected: %t\nActual: %t", true, result)
+	}
+
+	t.Cleanup(master_password_service_test_cleanup)
+}
+
+func TestValidateMasterPassword_Login(t *testing.T) {
+	new_password := map[string]string{"master_password": "12345"}
+
+	service := new(MasterPasswordService)
+	service.Init()
+
+	err := service.SetMasterPassword(new_password["master_password"])
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	result, err := service.ValidateMasterPassword("12345", true)
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	if !result {
+		t.Errorf("Expected: %t\nActual: %t", true, result)
+	} else {
+		system_service := new(SystemService)
+		system_service.Init()
+
+		system_data, err := system_service.GetSystemData()
+		if err != nil {
+			t.Error(err.Error())
+		}
+
+		if system_data.Login_count != 2 {
+			t.Errorf("Incorrect login count\nExpected: %d\nActual: %d", 2, system_data.Login_count)
+		}
 	}
 
 	t.Cleanup(master_password_service_test_cleanup)

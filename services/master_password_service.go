@@ -1,8 +1,10 @@
 package services
 
 import (
+	"ncrypt/models"
 	"ncrypt/utils/encryptor"
 	"os"
+	"time"
 
 	"github.com/dgraph-io/badger/v4"
 	"github.com/joho/godotenv"
@@ -15,7 +17,8 @@ func (obj *MasterPasswordService) Init() {
 	godotenv.Load("../.env")
 }
 
-func (obj *MasterPasswordService) SetMasterPassword(password string) error {
+// helper function to set master_password
+func (obj *MasterPasswordService) setMasterPassword(password string) error {
 	db, err := badger.Open(badger.DefaultOptions(os.Getenv("MASTER_PASSWORD_DB_NAME")))
 
 	if err != nil {
@@ -38,14 +41,73 @@ func (obj *MasterPasswordService) SetMasterPassword(password string) error {
 	return nil
 }
 
-func (obj *MasterPasswordService) ValidateMasterPassword(password string) (bool, error) {
+// Sets up master_password for the very first time and also creates system->login_info if not found
+func (obj *MasterPasswordService) SetMasterPassword(password string) error {
+	err := obj.setMasterPassword(password)
+
+	if err != nil {
+		return err
+	}
+
+	system_service := new(SystemService)
+	system_service.Init()
+
+	_, err = system_service.GetSystemData()
+
+	if err != nil {
+		if err == badger.ErrKeyNotFound {
+			err := system_service.setSystemData(models.SystemData{Login_count: 1, Last_login: time.Now().Format(time.RFC3339)})
+			if err != nil {
+				return nil
+			}
+		} else {
+			return nil
+		}
+
+	}
+
+	return nil
+}
+
+func (obj *MasterPasswordService) UpdateMasterPassword(password string) error {
+	return obj.setMasterPassword(password)
+}
+
+func (obj *MasterPasswordService) ValidateMasterPassword(password string, is_login ...bool) (bool, error) {
+
 	stored_password, err := obj.GetMasterPassword()
 
 	if err != nil {
 		return false, err
 	}
 
-	return stored_password == encryptor.CreateHash(password), nil
+	result := stored_password == encryptor.CreateHash(password)
+
+	//If it is a validation for logging in, then update system's last_login_date_time
+	if len(is_login) == 1 {
+		if is_login[0] && result {
+			system_service := new(SystemService)
+			system_service.Init()
+
+			system_data, err := system_service.GetSystemData()
+
+			if err != nil {
+				return false, err
+			}
+
+			system_data.Login_count += 1
+			now := time.Now()
+			system_data.Last_login = now.Format(time.RFC3339)
+
+			err = system_service.setSystemData(*system_data)
+
+			if err != nil {
+				return false, err
+			}
+		}
+	}
+
+	return result, nil
 }
 
 func (obj *MasterPasswordService) GetMasterPassword() (string, error) {
