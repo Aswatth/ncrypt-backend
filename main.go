@@ -30,6 +30,12 @@ func main() {
 
 	base_path := server.Group("")
 
+	system_service := new(services.SystemService)
+	system_service.Init()
+	system_controller := new(controllers.SystemController)
+	system_controller.Init(*system_service)
+	system_controller.RegisterRoutes(base_path)
+
 	login_service := new(services.LoginService)
 	login_service.Init()
 	login_controller := new(controllers.LoginController)
