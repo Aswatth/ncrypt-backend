@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -56,5 +57,36 @@ func GeneratePassword(digits bool, uppercase bool, special_char bool, length int
 		}
 	}
 
-	return generated_password
+	fmt.Println(generated_password)
+	return shuffule(generated_password, rand.Intn(len(generated_password)))
+}
+
+func shuffule(generated_password string, shuffle_count int) string {
+	generated_password_rune := []rune(generated_password)
+
+	//Shuffle first three characters which was generated as per constraints
+	random_index := rand.Intn(len(generated_password_rune))
+	generated_password_rune[0], generated_password_rune[random_index] = generated_password_rune[random_index], generated_password_rune[0]
+	generated_password_rune[0], generated_password_rune[random_index] = generated_password_rune[random_index], generated_password_rune[0]
+	generated_password_rune[0], generated_password_rune[random_index] = generated_password_rune[random_index], generated_password_rune[0]
+
+	random_index = rand.Intn(len(generated_password_rune))
+	generated_password_rune[1], generated_password_rune[random_index] = generated_password_rune[random_index], generated_password_rune[1]
+	generated_password_rune[1], generated_password_rune[random_index] = generated_password_rune[random_index], generated_password_rune[1]
+	generated_password_rune[1], generated_password_rune[random_index] = generated_password_rune[random_index], generated_password_rune[1]
+
+	random_index = rand.Intn(len(generated_password_rune))
+	generated_password_rune[2], generated_password_rune[random_index] = generated_password_rune[random_index], generated_password_rune[2]
+	generated_password_rune[2], generated_password_rune[random_index] = generated_password_rune[random_index], generated_password_rune[2]
+	generated_password_rune[2], generated_password_rune[random_index] = generated_password_rune[random_index], generated_password_rune[2]
+
+	//Random shuffle
+	for range shuffle_count {
+		random_index_1 := rand.Intn(len(generated_password_rune))
+		random_index_2 := rand.Intn(len(generated_password_rune))
+
+		generated_password_rune[random_index_1], generated_password_rune[random_index_2] = generated_password_rune[random_index_2], generated_password_rune[random_index_1]
+	}
+
+	return string(generated_password_rune)
 }
