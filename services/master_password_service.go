@@ -92,14 +92,8 @@ func (obj *MasterPasswordService) UpdateMasterPassword(password string) error {
 		return nil
 	}
 
-	key, err = obj.GetMasterPassword()
-
-	if err != nil {
-		return nil
-	}
-
 	//Encrypt all login data using new password
-	err = login_service.encrytAllData(login_list, key)
+	err = login_service.encrytAllData(login_list)
 
 	if err != nil {
 		return nil

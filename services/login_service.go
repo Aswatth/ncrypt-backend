@@ -263,7 +263,7 @@ func (obj *LoginService) decryptAllData(key string) ([]models.Login, error) {
 	return login_data_list, nil
 }
 
-func (obj *LoginService) encrytAllData(login_data_list []models.Login, key string) error {
+func (obj *LoginService) encrytAllData(login_data_list []models.Login) error {
 
 	for index := range len(login_data_list) {
 		err := obj.setLoginData(&login_data_list[index])
