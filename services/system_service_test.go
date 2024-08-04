@@ -42,8 +42,6 @@ func TestGetSystemData(t *testing.T) {
 
 	if err != nil {
 		t.Error(err.Error())
-	} else {
-
 	}
 
 	if system_data.Login_count != initial_data.Login_count || system_data.Last_login != initial_data.Last_login {
