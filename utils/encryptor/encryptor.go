@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"io"
 )
 
@@ -16,41 +17,47 @@ func CreateHash(data_to_hash string) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
-func Encrypt(data_to_encrypt string, key string) string {
+func Encrypt(data_to_encrypt string, key string) (string, error) {
 	if len(key) != 32 {
 		key = CreateHash(key)
 	}
 	block, _ := aes.NewCipher([]byte(key))
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		panic(err.Error())
+		return "", err
 	}
 	nonce := make([]byte, gcm.NonceSize())
 	if _, err = io.ReadFull(rand.Reader, nonce); err != nil {
-		panic(err.Error())
+		return "", err
 	}
 	ciphertext := gcm.Seal(nonce, nonce, []byte(data_to_encrypt), nil)
-	return base64.StdEncoding.EncodeToString(ciphertext)
+	return base64.StdEncoding.EncodeToString(ciphertext), nil
 }
 
-func Decrypt(encrypted_data string, key string) string {
+func Decrypt(encrypted_data string, key string) (string, error) {
 	encrypted_data_bytes, _ := base64.StdEncoding.DecodeString(encrypted_data)
 	if len(key) != 32 {
 		key = CreateHash(key)
 	}
 	block, err := aes.NewCipher([]byte(key))
 	if err != nil {
-		panic(err.Error())
+		return "", err
 	}
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		panic(err.Error())
+		return "", err
 	}
+
 	nonceSize := gcm.NonceSize()
+
+	if nonceSize > len(encrypted_data) {
+		return "", errors.New("invalid encrypted data")
+	}
+
 	nonce, ciphertext := encrypted_data_bytes[:nonceSize], encrypted_data_bytes[nonceSize:]
 	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
-		panic(err.Error())
+		return "", err
 	}
-	return string(plaintext[:])
+	return string(plaintext[:]), nil
 }

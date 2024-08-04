@@ -73,7 +73,11 @@ func (obj *LoginService) GetDecryptedAccountPassword(login_data_name string, acc
 				return "", err
 			}
 
-			decrypted_password = encryptor.Decrypt(account.Password, master_password_hash)
+			decrypted_password, err = encryptor.Decrypt(account.Password, master_password_hash)
+
+			if err != nil {
+				return "", err
+			}
 
 			break
 		}
@@ -147,7 +151,7 @@ func (obj *LoginService) setLoginData(login_data *models.Login) error {
 		}
 	}
 
-	//Ecnrypt login_data - account_passwords
+	//Encrypt login_data - account_passwords
 	// Get master password
 	master_password_hash, err := obj.master_password_service.GetMasterPassword()
 
@@ -159,7 +163,7 @@ func (obj *LoginService) setLoginData(login_data *models.Login) error {
 	}
 
 	for index := range len(login_data.Accounts) {
-		login_data.Accounts[index].Password = encryptor.Encrypt(login_data.Accounts[index].Password, master_password_hash)
+		login_data.Accounts[index].Password, _ = encryptor.Encrypt(login_data.Accounts[index].Password, master_password_hash)
 	}
 
 	login_bytes, err := json.Marshal(login_data)
@@ -209,6 +213,24 @@ func (obj *LoginService) UpdateLoginData(name string, login_data *models.Login) 
 		obj.DeleteLogin(name)
 	}
 
+	//Decrypt data
+	master_password_service := new(MasterPasswordService)
+	master_password_service.Init()
+
+	key, err := master_password_service.GetMasterPassword()
+
+	if err != nil {
+		return err
+	}
+
+	for index := range len(login_data.Accounts) {
+		decrypted_data, err := encryptor.Decrypt(login_data.Accounts[index].Password, key)
+
+		if err == nil {
+			login_data.Accounts[index].Password = decrypted_data
+		}
+	}
+
 	return obj.setLoginData(login_data)
 }
 
@@ -234,7 +256,7 @@ func (obj *LoginService) DeleteLogin(name_to_delete string) error {
 
 func (obj *LoginService) decryptData(login_data models.Login, key string) *models.Login {
 	for index := range len(login_data.Accounts) {
-		login_data.Accounts[index].Password = encryptor.Decrypt(login_data.Accounts[index].Password, key)
+		login_data.Accounts[index].Password, _ = encryptor.Decrypt(login_data.Accounts[index].Password, key)
 	}
 
 	return &login_data
@@ -242,7 +264,7 @@ func (obj *LoginService) decryptData(login_data models.Login, key string) *model
 
 func (obj *LoginService) encryptData(login_data models.Login, key string) *models.Login {
 	for index := range len(login_data.Accounts) {
-		login_data.Accounts[index].Password = encryptor.Encrypt(login_data.Accounts[index].Password, key)
+		login_data.Accounts[index].Password, _ = encryptor.Encrypt(login_data.Accounts[index].Password, key)
 	}
 
 	return &login_data
