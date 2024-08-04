@@ -231,3 +231,46 @@ func (obj *LoginService) DeleteLogin(name_to_delete string) error {
 
 	return nil
 }
+
+func (obj *LoginService) decryptData(login_data models.Login, key string) *models.Login {
+	for index := range len(login_data.Accounts) {
+		login_data.Accounts[index].Password = encryptor.Decrypt(login_data.Accounts[index].Password, key)
+	}
+
+	return &login_data
+}
+
+func (obj *LoginService) encryptData(login_data models.Login, key string) *models.Login {
+	for index := range len(login_data.Accounts) {
+		login_data.Accounts[index].Password = encryptor.Encrypt(login_data.Accounts[index].Password, key)
+	}
+
+	return &login_data
+}
+
+func (obj *LoginService) decryptAllData(key string) ([]models.Login, error) {
+
+	login_data_list, err := obj.GetAllLoginData()
+
+	if err != nil {
+		return nil, err
+	}
+
+	for index := range len(login_data_list) {
+		login_data_list[index] = *obj.decryptData(login_data_list[index], key)
+	}
+
+	return login_data_list, nil
+}
+
+func (obj *LoginService) encrytAllData(login_data_list []models.Login, key string) error {
+
+	for index := range len(login_data_list) {
+		err := obj.setLoginData(&login_data_list[index])
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

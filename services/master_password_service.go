@@ -70,7 +70,42 @@ func (obj *MasterPasswordService) SetMasterPassword(password string) error {
 }
 
 func (obj *MasterPasswordService) UpdateMasterPassword(password string) error {
-	return obj.setMasterPassword(password)
+
+	key, err := obj.GetMasterPassword()
+
+	if err != nil {
+		return nil
+	}
+
+	//Decrypt all encrpyted data using old password
+	login_service := new(LoginService)
+	login_service.Init()
+	login_list, err := login_service.decryptAllData(key)
+
+	if err != nil {
+		return nil
+	}
+
+	err = obj.setMasterPassword(password)
+
+	if err != nil {
+		return nil
+	}
+
+	key, err = obj.GetMasterPassword()
+
+	if err != nil {
+		return nil
+	}
+
+	//Encrypt all login data using new password
+	err = login_service.encrytAllData(login_list, key)
+
+	if err != nil {
+		return nil
+	}
+
+	return nil
 }
 
 func (obj *MasterPasswordService) ValidateMasterPassword(password string, is_login ...bool) (bool, error) {
