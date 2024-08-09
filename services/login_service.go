@@ -210,7 +210,11 @@ func (obj *LoginService) UpdateLoginData(name string, login_data *models.Login) 
 			return errors.New(login_data.Name + " already exists")
 		}
 
-		obj.DeleteLogin(name)
+		err = obj.DeleteLogin(name)
+
+		if err != nil {
+			return err
+		}
 	}
 
 	//Decrypt data
