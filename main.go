@@ -42,10 +42,8 @@ func main() {
 	login_controller.Init(login_service)
 	login_controller.RegisterRoutes(base_path)
 
-	master_password_service := new(services.MasterPasswordService)
-	master_password_service.Init()
 	master_password_controller := new(controllers.MasterPasswordController)
-	master_password_controller.Init(master_password_service)
+	master_password_controller.Init()
 	master_password_controller.RegisterRoutes(base_path)
 
 	server.Run(":" + port)

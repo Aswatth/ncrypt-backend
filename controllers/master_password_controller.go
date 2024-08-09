@@ -8,11 +8,12 @@ import (
 )
 
 type MasterPasswordController struct {
-	service services.MasterPasswordService
+	service services.IMasterPasswordService
 }
 
-func (obj *MasterPasswordController) Init(service *services.MasterPasswordService) {
-	obj.service = *service
+func (obj *MasterPasswordController) Init() {
+	obj.service = services.InitBadgerMasterPasswordService()
+	obj.service.Init()
 }
 
 func (obj *MasterPasswordController) SetPassword(ctx *gin.Context) {
@@ -50,11 +51,7 @@ func (obj *MasterPasswordController) Validate(ctx *gin.Context) {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
 		return
 	} else {
-		is_login := false
-		if(data["is_login"] == "true") {
-			is_login = true
-		}
-		result, err := obj.service.ValidateMasterPassword(data["master_password"],is_login)
+		result, err := obj.service.Validate(data["master_password"])
 
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
