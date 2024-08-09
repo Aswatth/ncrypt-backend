@@ -2,6 +2,7 @@ package services
 
 import (
 	"ncrypt/models"
+	"ncrypt/utils/database"
 	"ncrypt/utils/encryptor"
 	"os"
 	"time"
@@ -11,34 +12,27 @@ import (
 )
 
 type MasterPasswordService struct {
+	database database.IDatabase
 }
 
+// Initialize Master password service
 func (obj *MasterPasswordService) Init() {
+	//Load env
 	godotenv.Load("../.env")
+
+	//Initialize database
+	obj.database = database.InitBadgerDb()
+	obj.database.SetDatabase(os.Getenv("MASTER_PASSWORD_DB_NAME"))
 }
 
 // helper function to set master_password
 func (obj *MasterPasswordService) setMasterPassword(password string) error {
-	db, err := badger.Open(badger.DefaultOptions(os.Getenv("MASTER_PASSWORD_DB_NAME")))
-
-	if err != nil {
-		return err
-	}
-	defer db.Close()
 
 	password = encryptor.CreateHash(password)
 
-	err = db.Update(func(txn *badger.Txn) error {
-		err := txn.Set([]byte(os.Getenv("MASTER_PASSWORD_KEY")), []byte(password))
+	err := obj.database.AddData(os.Getenv("MASTER_PASSWORD_KEY"), password)
 
-		return err
-	})
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 // Sets up master_password for the very first time and also creates system->login_info if not found
@@ -69,6 +63,12 @@ func (obj *MasterPasswordService) SetMasterPassword(password string) error {
 	return nil
 }
 
+/*
+	Update master_password
+
+1. Decrypt all encrypted content using old master_password
+2. Encrypt all encrpyed content using new master_passwordl̥
+*/
 func (obj *MasterPasswordService) UpdateMasterPassword(password string) error {
 
 	key, err := obj.GetMasterPassword()
@@ -102,7 +102,7 @@ func (obj *MasterPasswordService) UpdateMasterPassword(password string) error {
 	return nil
 }
 
-func (obj *MasterPasswordService) ValidateMasterPassword(password string, is_login ...bool) (bool, error) {
+func (obj *MasterPasswordService) Validate(password string) (bool, error) {
 
 	stored_password, err := obj.GetMasterPassword()
 
@@ -112,63 +112,11 @@ func (obj *MasterPasswordService) ValidateMasterPassword(password string, is_log
 
 	result := stored_password == encryptor.CreateHash(password)
 
-	//If it is a validation for logging in, then update system's last_login_date_time
-	if len(is_login) == 1 {
-		if is_login[0] && result {
-			system_service := new(SystemService)
-			system_service.Init()
-
-			system_data, err := system_service.GetSystemData()
-
-			if err != nil {
-				return false, err
-			}
-
-			system_data.Login_count += 1
-			now := time.Now()
-			system_data.Last_login = now.Format(time.RFC3339)
-
-			err = system_service.setSystemData(*system_data)
-
-			if err != nil {
-				return false, err
-			}
-		}
-	}
-
 	return result, nil
 }
 
 func (obj *MasterPasswordService) GetMasterPassword() (string, error) {
-	db, err := badger.Open(badger.DefaultOptions(os.Getenv("MASTER_PASSWORD_DB_NAME")))
+	fetched_data, err := obj.database.GetData(os.Getenv("MASTER_PASSWORD_KEY"))
 
-	if err != nil {
-		return "", err
-	}
-	defer db.Close()
-
-	var stored_password string
-	err = db.View(func(txn *badger.Txn) error {
-		item, err := txn.Get([]byte(os.Getenv("MASTER_PASSWORD_KEY")))
-
-		if err != nil {
-			return err
-		}
-
-		err = item.Value(func(val []byte) error {
-			temp_data := append([]byte{}, val...)
-
-			stored_password = string(temp_data[:])
-
-			return nil
-		})
-
-		return err
-	})
-
-	if err != nil {
-		return "", err
-	}
-
-	return stored_password, nil
+	return fetched_data.(string), err
 }
