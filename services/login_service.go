@@ -1,9 +1,9 @@
 package services
 
 import (
-	"encoding/json"
 	"errors"
 	"ncrypt/models"
+	"ncrypt/utils/database"
 	"ncrypt/utils/encryptor"
 	"os"
 	"strings"
@@ -13,48 +13,33 @@ import (
 )
 
 type LoginService struct {
-	master_password_service MasterPasswordService
+	database                database.IDatabase
+	master_password_service IMasterPasswordService
 }
 
 func (obj *LoginService) Init() {
 	godotenv.Load("../.env")
-	master_password_service := new(MasterPasswordService)
 
-	obj.master_password_service = *master_password_service
+	obj.database = database.InitBadgerDb()
+	obj.database.SetDatabase(os.Getenv("LOGIN_DB_NAME"))
+
+	obj.master_password_service = InitBadgerMasterPasswordService()
 	obj.master_password_service.Init()
 }
 
-func (obj *LoginService) GetLoginData(name string) (*models.Login, error) {
+func (obj *LoginService) GetLoginData(name string) (models.Login, error) {
 	name = strings.ToUpper(name)
-	db, err := badger.Open(badger.DefaultOptions(os.Getenv("LOGIN_DB_NAME")))
+
+	fetched_data, err := obj.database.GetData(name)
 
 	if err != nil {
-		return nil, err
+		return models.Login{}, err
 	}
-	defer db.Close()
 
 	var login_data models.Login
-	err = db.View(func(txn *badger.Txn) error {
-		item, err := txn.Get([]byte(name))
+	login_data.FromMap(fetched_data.(map[string]interface{}))
 
-		if err != nil {
-			return err
-		}
-
-		err = item.Value(func(val []byte) error {
-			temp_data := append([]byte{}, val...)
-
-			return json.Unmarshal(temp_data, &login_data)
-		})
-
-		return err
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &login_data, nil
+	return login_data, err
 }
 
 func (obj *LoginService) GetDecryptedAccountPassword(login_data_name string, account_username string) (string, error) {
@@ -91,54 +76,25 @@ func (obj *LoginService) GetDecryptedAccountPassword(login_data_name string, acc
 }
 
 func (obj *LoginService) GetAllLoginData() ([]models.Login, error) {
-	db, err := badger.Open(badger.DefaultOptions(os.Getenv("LOGIN_DB_NAME")))
-
-	if err != nil {
-		return nil, err
-	}
-	defer db.Close()
-
 	var login_data_list []models.Login
-	err = db.View(func(txn *badger.Txn) error {
-		opts := badger.DefaultIteratorOptions
-		// opts.PrefetchSize = 10
-		it := txn.NewIterator(opts)
-		defer it.Close()
-		for it.Rewind(); it.Valid(); it.Next() {
-			item := it.Item()
-			err := item.Value(func(v []byte) error {
-				var login_data models.Login
 
-				err := json.Unmarshal(v, &login_data)
-
-				if err != nil {
-					return err
-				}
-
-				login_data_list = append(login_data_list, login_data)
-
-				return nil
-			})
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	})
+	result_list, err := obj.database.GetAllData()
 
 	if err != nil {
 		return nil, err
 	}
+
+	for _, result := range result_list {
+		var login_data models.Login
+		login_data.FromMap(result.(map[string]interface{}))
+
+		login_data_list = append(login_data_list, login_data)
+	}
+
 	return login_data_list, nil
 }
 
 func (obj *LoginService) setLoginData(login_data *models.Login) error {
-	db, err := badger.Open(badger.DefaultOptions(os.Getenv("LOGIN_DB_NAME")))
-
-	if err != nil {
-		return err
-	}
-	defer db.Close()
 
 	//Check for duplicate account-username
 	account_username_map := make(map[string]bool)
@@ -166,37 +122,23 @@ func (obj *LoginService) setLoginData(login_data *models.Login) error {
 		login_data.Accounts[index].Password, _ = encryptor.Encrypt(login_data.Accounts[index].Password, master_password_hash)
 	}
 
-	login_bytes, err := json.Marshal(login_data)
+	err = obj.database.AddData(strings.ToUpper(login_data.Name), login_data)
 
-	if err != nil {
-		return err
-	}
-
-	err = db.Update(func(txn *badger.Txn) error {
-		err := txn.Set([]byte(strings.ToUpper(login_data.Name)), login_bytes)
-
-		return err
-	})
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
-func (obj *LoginService) AddLoginData(new_login_data *models.Login) error {
+func (obj *LoginService) AddLoginData(login_data *models.Login) error {
 
-	existing_data, err := obj.GetLoginData(new_login_data.Name)
+	existing_data, err := obj.GetLoginData(login_data.Name)
 
 	if err != nil && err != badger.ErrKeyNotFound {
 		return err
 	}
-	if existing_data != nil {
-		return errors.New(new_login_data.Name + " already exists")
+	if existing_data.Name != "" {
+		return errors.New(login_data.Name + " already exists")
 	}
 
-	return obj.setLoginData(new_login_data)
+	return obj.setLoginData(login_data)
 }
 
 func (obj *LoginService) UpdateLoginData(name string, login_data *models.Login) error {
@@ -206,11 +148,11 @@ func (obj *LoginService) UpdateLoginData(name string, login_data *models.Login) 
 		if err != nil && err != badger.ErrKeyNotFound {
 			return err
 		}
-		if existing_data != nil {
+		if existing_data.Name != "" {
 			return errors.New(login_data.Name + " already exists")
 		}
 
-		err = obj.DeleteLogin(name)
+		err = obj.DeleteLoginData(name)
 
 		if err != nil {
 			return err
@@ -238,24 +180,10 @@ func (obj *LoginService) UpdateLoginData(name string, login_data *models.Login) 
 	return obj.setLoginData(login_data)
 }
 
-func (obj *LoginService) DeleteLogin(name_to_delete string) error {
-	db, err := badger.Open(badger.DefaultOptions(os.Getenv("LOGIN_DB_NAME")))
+func (obj *LoginService) DeleteLoginData(name string) error {
+	err := obj.database.DeleteData(strings.ToUpper(name))
 
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
-	err = db.Update(func(txn *badger.Txn) error {
-		err := txn.Delete([]byte(strings.ToUpper(name_to_delete)))
-		return err
-	})
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func (obj *LoginService) decryptData(login_data models.Login, key string) *models.Login {
