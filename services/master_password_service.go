@@ -118,5 +118,9 @@ func (obj *MasterPasswordService) Validate(password string) (bool, error) {
 func (obj *MasterPasswordService) GetMasterPassword() (string, error) {
 	fetched_data, err := obj.database.GetData(os.Getenv("MASTER_PASSWORD_KEY"))
 
+	if err != nil {
+		return "", err
+	}
+
 	return fetched_data.(string), err
 }
