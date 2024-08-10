@@ -1,81 +1,94 @@
 package services
 
 import (
-	"encoding/json"
+	"errors"
 	"ncrypt/models"
+	"ncrypt/utils/database"
+	"time"
 
 	"github.com/dgraph-io/badger/v4"
 )
 
 type SystemService struct {
-	system_db_name string
+	database                database.IDatabase
+	database_name           string
+	master_password_service IMasterPasswordService
 }
 
 func (obj *SystemService) Init() {
-	obj.system_db_name = "SYSTEM"
+	obj.database = &database.BadgerDb{}
+	obj.database_name = "SYSTEM"
+	obj.database.SetDatabase(obj.database_name)
+
+	//Initialize system
+	obj.initSystem()
+
+	obj.master_password_service = InitBadgerMasterPasswordService()
+	obj.master_password_service.Init()
+}
+
+func (obj *SystemService) initSystem() {
+	_, err := obj.GetSystemData()
+
+	if err != nil && err == badger.ErrKeyNotFound {
+		err = obj.setSystemData(models.SystemData{LoginCount: 0, LastLoginDateTime: "", CurrentLoginDateTime: "", IsLoggedIn: false, AutomaticBackup: false, AutomaticBackupLocation: "", BackupFileName: ""})
+	}
 }
 
 func (obj *SystemService) setSystemData(system_data models.SystemData) error {
-	db, err := badger.Open(badger.DefaultOptions(obj.system_db_name))
+	err := obj.database.AddData(obj.database_name, system_data)
 
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
-	system_data_bytes, err := json.Marshal(system_data)
-
-	if err != nil {
-		return err
-	}
-
-	err = db.Update(func(txn *badger.Txn) error {
-		err := txn.Set([]byte(obj.system_db_name), system_data_bytes)
-
-		return err
-	})
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func (obj *SystemService) GetSystemData() (*models.SystemData, error) {
-	db, err := badger.Open(badger.DefaultOptions(obj.system_db_name))
+	fetched_data, err := obj.database.GetData(obj.database_name)
 
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
 
 	var system_data models.SystemData
-	err = db.View(func(txn *badger.Txn) error {
-		item, err := txn.Get([]byte(obj.system_db_name))
+	system_data.FromMap(fetched_data.(map[string]interface{}))
 
-		if err != nil {
-			return err
-		}
+	return &system_data, err
+}
 
-		err = item.Value(func(val []byte) error {
-			temp_data := append([]byte{}, val...)
-
-			err := json.Unmarshal(temp_data[:], &system_data)
-
-			if err != nil {
-				return err
-			}
-
-			return nil
-		})
-
-		return err
-	})
+func (obj *SystemService) Login(password string) error {
+	result, err := obj.master_password_service.Validate(password)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &system_data, nil
+	if !result {
+		return errors.New("invalid password")
+	}
+
+	system_data, err := obj.GetSystemData()
+	if err != nil {
+		return err
+	}
+
+	system_data.IsLoggedIn = true
+	system_data.LoginCount += 1
+	system_data.CurrentLoginDateTime = time.Now().Format(time.RFC3339)
+
+	err = obj.setSystemData(*system_data)
+
+	return err
+}
+
+func (obj *SystemService) Logout() error {
+	system_data, err := obj.GetSystemData()
+	if err != nil {
+		return err
+	}
+
+	system_data.IsLoggedIn = false
+	system_data.LastLoginDateTime = system_data.CurrentLoginDateTime
+
+	err = obj.setSystemData(*system_data)
+
+	return err
 }

@@ -26,8 +26,36 @@ func (obj *SystemController) GetLoginInfo(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, system_data)
 }
 
+func (obj *SystemController) Login(ctx *gin.Context) {
+	request_data := make(map[string]string)
+
+	//Check if given JSON is valid
+	if err := ctx.ShouldBindJSON(&request_data); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := obj.service.Login(request_data["master_password"]); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	ctx.Status(http.StatusOK)
+}
+
+func (obj *SystemController) Logout(ctx *gin.Context) {
+	if err := obj.service.Logout(); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	ctx.Status(http.StatusOK)
+}
+
 func (obj *SystemController) RegisterRoutes(rg *gin.RouterGroup) {
 	group := rg.Group("system")
 
 	group.GET("/login_info", obj.GetLoginInfo)
+	group.POST("/login", obj.Login)
+	group.POST("/logout", obj.Logout)
 }
