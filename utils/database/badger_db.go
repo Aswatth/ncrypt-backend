@@ -46,8 +46,47 @@ func (obj *BadgerDb) GetData(table_name string, params ...string) (interface{}, 
 
 	return fetched_data, nil
 }
-func (obj *BadgerDb) GetAllData(table_name string, params ...string) ([]interface{}, error) {
-	return nil, nil
+func (obj *BadgerDb) GetAllData(params ...string) ([]interface{}, error) {
+	db, err := badger.Open(badger.DefaultOptions(obj.database_name))
+
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	var result_list []interface{}
+	err = db.View(func(txn *badger.Txn) error {
+		opts := badger.DefaultIteratorOptions
+		// opts.PrefetchSize = 10
+		it := txn.NewIterator(opts)
+		defer it.Close()
+		for it.Rewind(); it.Valid(); it.Next() {
+			item := it.Item()
+			err := item.Value(func(v []byte) error {
+				var result interface{}
+
+				err := json.Unmarshal(v, &result)
+
+				if err != nil {
+					return err
+				}
+
+				result_list = append(result_list, result)
+
+				return nil
+			})
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return result_list, nil
 }
 func (obj *BadgerDb) AddData(table_name string, data interface{}) error {
 	db, err := badger.Open(badger.DefaultOptions(obj.database_name))
@@ -79,5 +118,17 @@ func (obj *BadgerDb) UpdateData(table_name string, data interface{}, params ...s
 	return nil
 }
 func (obj *BadgerDb) DeleteData(table_name string, params ...string) error {
-	return nil
+	db, err := badger.Open(badger.DefaultOptions(obj.database_name))
+
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	err = db.Update(func(txn *badger.Txn) error {
+		err := txn.Delete([]byte(table_name))
+		return err
+	})
+
+	return err
 }
