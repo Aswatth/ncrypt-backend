@@ -10,6 +10,7 @@ type ILoginService interface {
 	AddLoginData(login_data *models.Login) error
 	UpdateLoginData(name string, login_data *models.Login) error
 	DeleteLoginData(name string) error
+	recryptData(data interface{}) error
 }
 
 func InitBadgerLoginService() *LoginService {

@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"log"
 	"ncrypt/models"
 	"ncrypt/utils/database"
 	"ncrypt/utils/encryptor"
@@ -186,41 +187,34 @@ func (obj *LoginService) DeleteLoginData(name string) error {
 	return err
 }
 
-func (obj *LoginService) decryptData(login_data models.Login, key string) *models.Login {
-	for index := range len(login_data.Accounts) {
-		login_data.Accounts[index].Password, _ = encryptor.Decrypt(login_data.Accounts[index].Password, key)
-	}
+func (obj *LoginService) recryptData(data interface{}) error {
+	//Extract password data
+	old_password := data.(map[string]string)["old_password"]
+	new_password := data.(map[string]string)["new_password"]
 
-	return &login_data
-}
+	log.Printf("Old password: %s\tNew password: %s", old_password, new_password)
 
-func (obj *LoginService) encryptData(login_data models.Login, key string) *models.Login {
-	for index := range len(login_data.Accounts) {
-		login_data.Accounts[index].Password, _ = encryptor.Encrypt(login_data.Accounts[index].Password, key)
-	}
-
-	return &login_data
-}
-
-func (obj *LoginService) decryptAllData(key string) ([]models.Login, error) {
-
-	login_data_list, err := obj.GetAllLoginData()
+	//Get all login data
+	login_list, err := obj.GetAllLoginData()
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	for index := range len(login_data_list) {
-		login_data_list[index] = *obj.decryptData(login_data_list[index], key)
+	//Decrypt all login data
+	for i := range len(login_list) {
+		for j := range len(login_list[i].Accounts) {
+			login_list[i].Accounts[j].Password, err = encryptor.Decrypt(login_list[i].Accounts[j].Password, old_password)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
-	return login_data_list, nil
-}
+	//Save updated data
+	for _, login_data := range login_list {
+		err = obj.setLoginData(&login_data) // Automatically encrypts data
 
-func (obj *LoginService) encrytAllData(login_data_list []models.Login) error {
-
-	for index := range len(login_data_list) {
-		err := obj.setLoginData(&login_data_list[index])
 		if err != nil {
 			return err
 		}

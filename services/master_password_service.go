@@ -1,6 +1,7 @@
 package services
 
 import (
+	"ncrypt/utils"
 	"ncrypt/utils/database"
 	"ncrypt/utils/encryptor"
 	"os"
@@ -22,19 +23,12 @@ func (obj *MasterPasswordService) Init() {
 	obj.database.SetDatabase(os.Getenv("MASTER_PASSWORD_DB_NAME"))
 }
 
-// helper function to set master_password
-func (obj *MasterPasswordService) setMasterPassword(password string) error {
+// Function to set master_password
+func (obj *MasterPasswordService) SetMasterPassword(password string) error {
 
 	password = encryptor.CreateHash(password)
 
 	err := obj.database.AddData(os.Getenv("MASTER_PASSWORD_KEY"), password)
-
-	return err
-}
-
-// Sets up master_password for the very first time and also creates system->login_info if not found
-func (obj *MasterPasswordService) SetMasterPassword(password string) error {
-	err := obj.setMasterPassword(password)
 
 	return err
 }
@@ -46,34 +40,36 @@ func (obj *MasterPasswordService) SetMasterPassword(password string) error {
 2. Encrypt all encrpyed content using new master_passwordl̥
 */
 func (obj *MasterPasswordService) UpdateMasterPassword(password string) error {
-
-	key, err := obj.GetMasterPassword()
+	old_password, err := obj.GetMasterPassword()
 
 	if err != nil {
 		return nil
 	}
 
-	//Decrypt all encrpyted data using old password
-	login_service := new(LoginService)
+	err = obj.SetMasterPassword(password)
+
+	new_password, err := obj.GetMasterPassword()
+
+	if err != nil {
+		return nil
+	}
+
+	//Setup broadcast to update encrypted data across services
+	broadcast := utils.NewBroadcast()
+
+	login_service := InitBadgerLoginService()
 	login_service.Init()
-	login_list, err := login_service.decryptAllData(key)
+	broadcast.Subscribe("UPDATE_MASTER_PASSWORD", login_service.recryptData)
 
-	if err != nil {
-		return nil
+	event_data := utils.Event{
+		Type: "UPDATE_MASTER_PASSWORD",
+		Data: map[string]string{
+			"old_password": old_password,
+			"new_password": new_password,
+		},
 	}
 
-	err = obj.setMasterPassword(password)
-
-	if err != nil {
-		return nil
-	}
-
-	//Encrypt all login data using new password
-	err = login_service.encrytAllData(login_list)
-
-	if err != nil {
-		return nil
-	}
+	broadcast.Publish(event_data)
 
 	return nil
 }
