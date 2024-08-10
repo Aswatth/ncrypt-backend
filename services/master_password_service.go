@@ -1,13 +1,10 @@
 package services
 
 import (
-	"ncrypt/models"
 	"ncrypt/utils/database"
 	"ncrypt/utils/encryptor"
 	"os"
-	"time"
 
-	"github.com/dgraph-io/badger/v4"
 	"github.com/joho/godotenv"
 )
 
@@ -39,28 +36,7 @@ func (obj *MasterPasswordService) setMasterPassword(password string) error {
 func (obj *MasterPasswordService) SetMasterPassword(password string) error {
 	err := obj.setMasterPassword(password)
 
-	if err != nil {
-		return err
-	}
-
-	system_service := new(SystemService)
-	system_service.Init()
-
-	_, err = system_service.GetSystemData()
-
-	if err != nil {
-		if err == badger.ErrKeyNotFound {
-			err := system_service.setSystemData(models.SystemData{Login_count: 1, Last_login: time.Now().Format(time.RFC3339)})
-			if err != nil {
-				return nil
-			}
-		} else {
-			return nil
-		}
-
-	}
-
-	return nil
+	return err
 }
 
 /*
