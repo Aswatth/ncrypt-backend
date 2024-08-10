@@ -36,10 +36,8 @@ func main() {
 	system_controller.Init(*system_service)
 	system_controller.RegisterRoutes(base_path)
 
-	login_service := new(services.LoginService)
-	login_service.Init()
 	login_controller := new(controllers.LoginController)
-	login_controller.Init(login_service)
+	login_controller.Init()
 	login_controller.RegisterRoutes(base_path)
 
 	master_password_controller := new(controllers.MasterPasswordController)

@@ -10,11 +10,12 @@ import (
 )
 
 type LoginController struct {
-	service services.LoginService
+	service services.ILoginService
 }
 
-func (obj *LoginController) Init(serivce *services.LoginService) {
-	obj.service = *serivce
+func (obj *LoginController) Init() {
+	obj.service = services.InitBadgerLoginService()
+	obj.service.Init()
 }
 
 func (obj *LoginController) CreateLogin(ctx *gin.Context) {
@@ -72,7 +73,7 @@ func (obj *LoginController) GetAccountPassword(ctx *gin.Context) {
 func (obj *LoginController) DeleteLoginData(ctx *gin.Context) {
 	name := ctx.Param("name")
 
-	if err := obj.service.DeleteLogin(name); err != nil {
+	if err := obj.service.DeleteLoginData(name); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
 		return
 	} else {
