@@ -2,10 +2,10 @@ package services
 
 import (
 	"errors"
-	"log"
 	"ncrypt/models"
 	"ncrypt/utils/database"
 	"ncrypt/utils/encryptor"
+	"ncrypt/utils/logger"
 	"os"
 	"strings"
 
@@ -19,27 +19,35 @@ type LoginService struct {
 }
 
 func (obj *LoginService) Init() {
+	logger.Log.Printf("Initializing login service")
+	logger.Log.Printf("Loading .env variables")
 	godotenv.Load("../.env")
 
+	logger.Log.Printf("Setting up database")
 	obj.database = database.InitBadgerDb()
 	obj.database.SetDatabase(os.Getenv("LOGIN_DB_NAME"))
 
 	obj.master_password_service = InitBadgerMasterPasswordService()
 	obj.master_password_service.Init()
+
+	logger.Log.Printf("DONE")
 }
 
 func (obj *LoginService) GetLoginData(name string) (models.Login, error) {
+	logger.Log.Printf("Getting login data")
 	name = strings.ToUpper(name)
 
 	fetched_data, err := obj.database.GetData(name)
 
 	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return models.Login{}, err
 	}
 
 	var login_data models.Login
 	login_data.FromMap(fetched_data.(map[string]interface{}))
 
+	logger.Log.Printf("DONE")
 	return login_data, err
 }
 
@@ -47,21 +55,25 @@ func (obj *LoginService) GetDecryptedAccountPassword(login_data_name string, acc
 	fetched_login_data, err := obj.GetLoginData(login_data_name)
 
 	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return "", err
 	}
 
+	logger.Log.Printf("Decrypting login data")
 	var decrypted_password string
 	for _, account := range fetched_login_data.Accounts {
 		if account.Username == account_username {
 			master_password_hash, err := obj.master_password_service.GetMasterPassword()
 
 			if err != nil {
+				logger.Log.Printf("ERROR: %s", err.Error())
 				return "", err
 			}
 
 			decrypted_password, err = encryptor.Decrypt(account.Password, master_password_hash)
 
 			if err != nil {
+				logger.Log.Printf("ERROR: %s", err.Error())
 				return "", err
 			}
 
@@ -70,18 +82,22 @@ func (obj *LoginService) GetDecryptedAccountPassword(login_data_name string, acc
 	}
 
 	if decrypted_password == "" {
+		logger.Log.Printf("ERROR: account username not found")
 		return "", errors.New("account username not found")
 	}
 
+	logger.Log.Printf("DONE")
 	return decrypted_password, nil
 }
 
 func (obj *LoginService) GetAllLoginData() ([]models.Login, error) {
+	logger.Log.Printf("Getting all login data")
 	var login_data_list []models.Login
 
 	result_list, err := obj.database.GetAllData()
 
 	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return nil, err
 	}
 
@@ -92,11 +108,13 @@ func (obj *LoginService) GetAllLoginData() ([]models.Login, error) {
 		login_data_list = append(login_data_list, login_data)
 	}
 
+	logger.Log.Printf("DONE")
 	return login_data_list, nil
 }
 
 func (obj *LoginService) setLoginData(login_data *models.Login) error {
 
+	logger.Log.Printf("Checking for duplicate accounts")
 	//Check for duplicate account-username
 	account_username_map := make(map[string]bool)
 
@@ -108,13 +126,16 @@ func (obj *LoginService) setLoginData(login_data *models.Login) error {
 		}
 	}
 
+	logger.Log.Printf("Encrypting data")
 	//Encrypt login_data - account_passwords
 	// Get master password
 	master_password_hash, err := obj.master_password_service.GetMasterPassword()
 
 	if err != nil {
 		if strings.ToUpper(err.Error()) == "KEY NOT FOUND" {
-			return errors.New("master_password not set")
+			err = errors.New("master_password not set")
+			logger.Log.Printf("ERROR: %s", err.Error())
+			return err
 		}
 		return err
 	}
@@ -125,41 +146,64 @@ func (obj *LoginService) setLoginData(login_data *models.Login) error {
 
 	err = obj.database.AddData(strings.ToUpper(login_data.Name), login_data)
 
+	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
+	}
+
+	logger.Log.Printf("Saved to database!")
 	return err
 }
 
 func (obj *LoginService) AddLoginData(login_data *models.Login) error {
-
+	logger.Log.Printf("Adding login data")
+	logger.Log.Printf("Checking for duplicate data")
 	existing_data, err := obj.GetLoginData(login_data.Name)
 
 	if err != nil && err != badger.ErrKeyNotFound {
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return err
 	}
 	if existing_data.Name != "" {
+		logger.Log.Printf("ERROR: %s", "CONFLICTING NAMES")
 		return errors.New(login_data.Name + " already exists")
 	}
 
-	return obj.setLoginData(login_data)
+	err = obj.setLoginData(login_data)
+
+	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
+	}
+
+	logger.Log.Printf("DONE")
+	return err
 }
 
 func (obj *LoginService) UpdateLoginData(name string, login_data *models.Login) error {
+	logger.Log.Printf("Updating login data")
+
+	logger.Log.Printf("Checking for name conflicts")
 	if name != login_data.Name {
 		existing_data, err := obj.GetLoginData(login_data.Name)
 
 		if err != nil && err != badger.ErrKeyNotFound {
+			logger.Log.Printf("ERROR: %s", err.Error())
 			return err
 		}
 		if existing_data.Name != "" {
-			return errors.New(login_data.Name + " already exists")
+			err = errors.New(login_data.Name + " already exists")
+			logger.Log.Printf("ERROR: %s", err.Error())
+			return err
 		}
 
 		err = obj.DeleteLoginData(name)
 
 		if err != nil {
+			logger.Log.Printf("ERROR: %s", err.Error())
 			return err
 		}
 	}
 
+	logger.Log.Printf("Decrypting data")
 	//Decrypt data
 	master_password_service := new(MasterPasswordService)
 	master_password_service.Init()
@@ -167,7 +211,7 @@ func (obj *LoginService) UpdateLoginData(name string, login_data *models.Login) 
 	key, err := master_password_service.GetMasterPassword()
 
 	if err != nil {
-		return err
+		logger.Log.Printf("ERROR: %s", err.Error())
 	}
 
 	for index := range len(login_data.Accounts) {
@@ -178,26 +222,37 @@ func (obj *LoginService) UpdateLoginData(name string, login_data *models.Login) 
 		}
 	}
 
-	return obj.setLoginData(login_data)
-}
+	err = obj.setLoginData(login_data)
 
-func (obj *LoginService) DeleteLoginData(name string) error {
-	err := obj.database.DeleteData(strings.ToUpper(name))
+	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
+	}
+
+	logger.Log.Printf("DONE")
 
 	return err
 }
 
+func (obj *LoginService) DeleteLoginData(name string) error {
+	logger.Log.Printf("Deleting login data")
+	err := obj.database.DeleteData(strings.ToUpper(name))
+	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
+	}
+	logger.Log.Printf("DONE")
+	return err
+}
+
 func (obj *LoginService) recryptData(data interface{}) error {
+	logger.Log.Printf("Re-crpyting login data")
 	//Extract password data
 	old_password := data.(map[string]string)["old_password"]
-	new_password := data.(map[string]string)["new_password"]
-
-	log.Printf("Old password: %s\tNew password: %s", old_password, new_password)
 
 	//Get all login data
 	login_list, err := obj.GetAllLoginData()
 
 	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return err
 	}
 
@@ -206,6 +261,7 @@ func (obj *LoginService) recryptData(data interface{}) error {
 		for j := range len(login_list[i].Accounts) {
 			login_list[i].Accounts[j].Password, err = encryptor.Decrypt(login_list[i].Accounts[j].Password, old_password)
 			if err != nil {
+				logger.Log.Printf("ERROR: %s", err.Error())
 				return err
 			}
 		}
@@ -216,9 +272,11 @@ func (obj *LoginService) recryptData(data interface{}) error {
 		err = obj.setLoginData(&login_data) // Automatically encrypts data
 
 		if err != nil {
+			logger.Log.Printf("ERROR: %s", err.Error())
 			return err
 		}
 	}
 
+	logger.Log.Printf("DONE")
 	return nil
 }

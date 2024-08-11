@@ -5,6 +5,7 @@ import (
 	"log"
 	"ncrypt/controllers"
 	"ncrypt/services"
+	"ncrypt/utils/logger"
 	"net/http"
 	"os"
 
@@ -20,6 +21,8 @@ func main() {
 	godotenv.Load()
 
 	port := os.Getenv("PORT")
+
+	gin.DefaultWriter = logger.Log.Writer()
 
 	//web server
 	server := gin.Default()
@@ -43,6 +46,10 @@ func main() {
 	master_password_controller := new(controllers.MasterPasswordController)
 	master_password_controller.Init()
 	master_password_controller.RegisterRoutes(base_path)
+
+	go func() {
+		defer logger.Close()
+	}()
 
 	server.Run(":" + port)
 }
