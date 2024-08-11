@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"ncrypt/models"
+	"ncrypt/utils"
 	"ncrypt/utils/database"
 	"ncrypt/utils/encryptor"
 	"ncrypt/utils/logger"
@@ -252,4 +253,8 @@ type ExportData struct {
 	SYSTEM_DATA     models.SystemData `json:"SYSTEM" bson:"SYSTEM"`
 	LOGIN_DATA      []models.Login    `json:"LOGIN_DATA" bson:"LOGIN_DATA"`
 	MASTER_PASSWORD string            `json:"MASTER_PASSWORD" bson:"MASTER_PASSWORD"`
+}
+
+func (obj *SystemService) GeneratePassword(has_digits bool, has_upper_case bool, has_special_char bool, length int) string {
+	return utils.GeneratePassword(has_digits, has_upper_case, has_special_char, length)
 }

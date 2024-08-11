@@ -86,6 +86,20 @@ func (obj *SystemController) Import(ctx *gin.Context) {
 	ctx.Status(http.StatusOK)
 }
 
+func (obj *SystemController) GeneratePassword(ctx *gin.Context) {
+	request_data := make(map[string]interface{})
+
+	//Check if given JSON is valid
+	if err := ctx.ShouldBindJSON(&request_data); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	password := obj.service.GeneratePassword(request_data["has_digits"].(bool), request_data["has_upper_case"].(bool), request_data["has_special_char"].(bool), int(request_data["length"].(float64)))
+
+	ctx.JSON(http.StatusOK, password)
+}
+
 func (obj *SystemController) RegisterRoutes(rg *gin.RouterGroup) {
 	group := rg.Group("system")
 
@@ -94,4 +108,5 @@ func (obj *SystemController) RegisterRoutes(rg *gin.RouterGroup) {
 	group.POST("/logout", obj.Logout)
 	group.POST("/export", obj.Export)
 	group.POST("/import", obj.Import)
+	group.GET("/generate_password", obj.GeneratePassword)
 }
