@@ -15,7 +15,7 @@ func (obj *SystemData) FromMap(data map[string]interface{}) *SystemData {
 	obj.LastLoginDateTime = data["last_login"].(string)
 	obj.IsLoggedIn = data["is_logged_in"].(bool)
 	obj.CurrentLoginDateTime = data["current_login_date_time"].(string)
-	obj.IsLoggedIn = data["automatic_backup"].(bool)
+	obj.AutomaticBackup = data["automatic_backup"].(bool)
 	obj.AutomaticBackupLocation = data["automatic_backup_location"].(string)
 	obj.BackupFileName = data["backup_file_name"].(string)
 
