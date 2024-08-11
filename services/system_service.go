@@ -1,10 +1,15 @@
 package services
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"errors"
+	"io"
 	"ncrypt/models"
 	"ncrypt/utils/database"
+	"ncrypt/utils/encryptor"
 	"ncrypt/utils/logger"
+	"os"
 	"time"
 
 	"github.com/dgraph-io/badger/v4"
@@ -128,4 +133,123 @@ func (obj *SystemService) Logout() error {
 
 	logger.Log.Printf("Logged out")
 	return err
+}
+
+func (obj *SystemService) Export(file_name string, file_path string) error {
+	//Get system data
+	system_data, err := obj.GetSystemData()
+
+	if err != nil {
+		return err
+	}
+
+	//Get master password data
+	master_password, err := obj.master_password_service.GetMasterPassword()
+
+	if err != nil {
+		return err
+	}
+
+	//Get login data
+	login_service := InitBadgerLoginService()
+	login_service.Init()
+	login_data_list, err := login_service.GetAllLoginData()
+
+	if err != nil {
+		return err
+	}
+
+	export_data := new(ExportData)
+
+	export_data.SYSTEM_DATA = *system_data
+	export_data.LOGIN_DATA = login_data_list
+	export_data.MASTER_PASSWORD = master_password
+
+	file, err := os.Create(file_name + ".ncrypt")
+
+	if err != nil {
+		return err
+	}
+
+	defer file.Close()
+
+	export_data_bytes, err := json.Marshal(export_data)
+	if err != nil {
+		return err
+	}
+
+	//Encrpyt data using master_password
+	encrypted_export_data, err := encryptor.Encrypt(base64.StdEncoding.EncodeToString(export_data_bytes), master_password)
+	if err != nil {
+		return err
+	}
+
+	encrypted_export_data_bytes, err := base64.StdEncoding.DecodeString(encrypted_export_data)
+	if err != nil {
+		return err
+	}
+
+	if err != nil {
+		return err
+	}
+
+	file.Write(encrypted_export_data_bytes)
+
+	return nil
+}
+
+func (obj *SystemService) Import(file_name string, file_path string, master_password string) error {
+
+	file, err := os.Open(file_name)
+
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	data, err := io.ReadAll(file)
+	if err != nil {
+		return err
+	}
+
+	decrypted_data, err := encryptor.Decrypt(base64.StdEncoding.EncodeToString(data), encryptor.CreateHash(master_password))
+	if err != nil {
+		return err
+	}
+
+	decrypted_data_bytes, err := base64.StdEncoding.DecodeString(decrypted_data)
+	if err != nil {
+		return err
+	}
+
+	imported_data := new(ExportData)
+	json.Unmarshal(decrypted_data_bytes, &imported_data)
+
+	//Import system data
+	err = obj.setSystemData(imported_data.SYSTEM_DATA)
+	if err != nil {
+		return err
+	}
+
+	//Import master password
+	err = obj.master_password_service.importData(imported_data.MASTER_PASSWORD)
+	if err != nil {
+		return err
+	}
+
+	//Import login data
+	login_service := InitBadgerLoginService()
+	login_service.Init()
+	login_service.importData(imported_data.LOGIN_DATA)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type ExportData struct {
+	SYSTEM_DATA     models.SystemData `json:"SYSTEM" bson:"SYSTEM"`
+	LOGIN_DATA      []models.Login    `json:"LOGIN_DATA" bson:"LOGIN_DATA"`
+	MASTER_PASSWORD string            `json:"MASTER_PASSWORD" bson:"MASTER_PASSWORD"`
 }

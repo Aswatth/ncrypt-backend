@@ -280,3 +280,16 @@ func (obj *LoginService) recryptData(data interface{}) error {
 	logger.Log.Printf("DONE")
 	return nil
 }
+
+func (obj *LoginService) importData(login_data_list []models.Login) error {
+
+	for _, login_data := range login_data_list {
+		err := obj.database.AddData(strings.ToUpper(login_data.Name), login_data)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

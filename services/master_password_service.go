@@ -128,3 +128,9 @@ func (obj *MasterPasswordService) GetMasterPassword() (string, error) {
 
 	return fetched_data.(string), err
 }
+
+func (obj *MasterPasswordService) importData(password string) error {
+	err := obj.database.AddData(os.Getenv("MASTER_PASSWORD_KEY"), password)
+
+	return err
+}
