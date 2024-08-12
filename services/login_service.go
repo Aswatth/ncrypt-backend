@@ -70,7 +70,7 @@ func (obj *LoginService) GetDecryptedAccountPassword(login_data_name string, acc
 				return "", err
 			}
 
-			decrypted_password, err = encryptor.Decrypt(account.Password, master_password_hash)
+			decrypted_password, err = encryptor.Decrypt(account.Password, master_password_hash+login_data_name+account_username)
 
 			if err != nil {
 				logger.Log.Printf("ERROR: %s", err.Error())
@@ -141,7 +141,7 @@ func (obj *LoginService) setLoginData(login_data *models.Login) error {
 	}
 
 	for index := range len(login_data.Accounts) {
-		login_data.Accounts[index].Password, _ = encryptor.Encrypt(login_data.Accounts[index].Password, master_password_hash)
+		login_data.Accounts[index].Password, _ = encryptor.Encrypt(login_data.Accounts[index].Password, master_password_hash+login_data.Name+login_data.Accounts[index].Username)
 	}
 
 	err = obj.database.AddData(strings.ToUpper(login_data.Name), login_data)
@@ -215,8 +215,9 @@ func (obj *LoginService) UpdateLoginData(name string, login_data *models.Login) 
 	}
 
 	for index := range len(login_data.Accounts) {
-		decrypted_data, err := encryptor.Decrypt(login_data.Accounts[index].Password, key)
+		decrypted_data, err := encryptor.Decrypt(login_data.Accounts[index].Password, key+login_data.Name+login_data.Accounts[index].Username)
 
+		// login_data.Accounts[index].Password = decrypted_data
 		if err == nil {
 			login_data.Accounts[index].Password = decrypted_data
 		}
@@ -259,7 +260,7 @@ func (obj *LoginService) recryptData(data interface{}) error {
 	//Decrypt all login data
 	for i := range len(login_list) {
 		for j := range len(login_list[i].Accounts) {
-			login_list[i].Accounts[j].Password, err = encryptor.Decrypt(login_list[i].Accounts[j].Password, old_password)
+			login_list[i].Accounts[j].Password, err = encryptor.Decrypt(login_list[i].Accounts[j].Password, old_password+login_list[i].Name+login_list[i].Accounts[j].Username)
 			if err != nil {
 				logger.Log.Printf("ERROR: %s", err.Error())
 				return err
