@@ -9,6 +9,7 @@ import (
 	"ncrypt/utils"
 	"ncrypt/utils/database"
 	"ncrypt/utils/encryptor"
+	"ncrypt/utils/jwt"
 	"ncrypt/utils/logger"
 	"os"
 	"time"
@@ -76,24 +77,33 @@ func (obj *SystemService) GetSystemData() (*models.SystemData, error) {
 	return &system_data, err
 }
 
-func (obj *SystemService) Login(password string) error {
+func (obj *SystemService) Login(password string) (string, error) {
 	logger.Log.Printf("Logging in")
 	result, err := obj.master_password_service.Validate(password)
 
 	if err != nil {
 		logger.Log.Printf("ERROR: %s", err.Error())
-		return err
+		if err.Error() == "Key not found" {
+			token, err := jwt.ShortLivedToken()
+
+			if err != nil {
+				logger.Log.Printf("ERROR: %s", err.Error())
+				return "", err
+			}
+			return token, nil
+		}
+		return "", err
 	}
 
 	if !result {
 		logger.Log.Printf("ERROR: invalid password")
-		return errors.New("invalid password")
+		return "", errors.New("invalid password")
 	}
 
 	system_data, err := obj.GetSystemData()
 	if err != nil {
 		logger.Log.Printf("ERROR: %s", err.Error())
-		return err
+		return "", err
 	}
 
 	system_data.IsLoggedIn = true
@@ -104,12 +114,19 @@ func (obj *SystemService) Login(password string) error {
 
 	if err != nil {
 		logger.Log.Printf("ERROR: %s", err.Error())
-		return err
+		return "", err
 	}
 
 	logger.Log.Printf("Logged in")
 
-	return err
+	token, err := jwt.GenerateToken()
+
+	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
+		return "", err
+	}
+
+	return token, nil
 }
 
 func (obj *SystemService) Logout() error {
@@ -245,7 +262,7 @@ func (obj *SystemService) Import(file_name string, file_path string, master_pass
 	decrypted_data_bytes, err := base64.StdEncoding.DecodeString(decrypted_data)
 	if err != nil {
 		logger.Log.Printf("ERROR: %s", err.Error())
-		return err
+		return errors.New("incorrect master password or corrupted file")
 	}
 
 	logger.Log.Println("Importing system data")
