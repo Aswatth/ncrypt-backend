@@ -1,63 +1,90 @@
 package encryptor
 
 import (
+	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/md5"
 	"crypto/rand"
-	"encoding/base64"
+	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"io"
 )
 
+// Create a hash using SHA-256
 func CreateHash(data_to_hash string) string {
-	hasher := md5.New()
+	hasher := sha256.New()
 	hasher.Write([]byte(data_to_hash))
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
-func Encrypt(data_to_encrypt string, key string) (string, error) {
-	if len(key) != 32 {
-		key = CreateHash(key)
-	}
-	block, _ := aes.NewCipher([]byte(key))
-	gcm, err := cipher.NewGCM(block)
+// Encrpyt plain text using SHA-256 hash as key
+func Encrypt(plaintext string, keyStr string) (string, error) {
+	key, err := hex.DecodeString(CreateHash(keyStr))
+
 	if err != nil {
 		return "", err
 	}
-	nonce := make([]byte, gcm.NonceSize())
-	if _, err = io.ReadFull(rand.Reader, nonce); err != nil {
+
+	// Generate a random IV
+	iv := make([]byte, aes.BlockSize)
+	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
 		return "", err
 	}
-	ciphertext := gcm.Seal(nonce, nonce, []byte(data_to_encrypt), nil)
-	return base64.StdEncoding.EncodeToString(ciphertext), nil
+
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return "", err
+	}
+
+	// Pad plaintext to be multiple of block size
+	padding := aes.BlockSize - len(plaintext)%aes.BlockSize
+	padtext := bytes.Repeat([]byte{byte(padding)}, padding)
+	paddedPlaintext := append([]byte(plaintext), padtext...)
+
+	// Encrypt the plaintext
+	mode := cipher.NewCBCEncrypter(block, iv)
+	ciphertext := make([]byte, len(paddedPlaintext))
+	mode.CryptBlocks(ciphertext, paddedPlaintext)
+
+	// Combine IV and ciphertext for output
+	combined := append(iv, ciphertext...)
+	return hex.EncodeToString(combined), nil
 }
 
-func Decrypt(encrypted_data string, key string) (string, error) {
-	encrypted_data_bytes, _ := base64.StdEncoding.DecodeString(encrypted_data)
-	if len(key) != 32 {
-		key = CreateHash(key)
-	}
-	block, err := aes.NewCipher([]byte(key))
-	if err != nil {
-		return "", err
-	}
-	gcm, err := cipher.NewGCM(block)
+// Decrpyt encrypted text using hsa-256 hash
+func Decrypt(ciphertextHex string, keyStr string) (string, error) {
+	key, err := hex.DecodeString(CreateHash(keyStr))
+
 	if err != nil {
 		return "", err
 	}
 
-	nonceSize := gcm.NonceSize()
-
-	if nonceSize > len(encrypted_data) {
-		return "", errors.New("invalid encrypted data")
-	}
-
-	nonce, ciphertext := encrypted_data_bytes[:nonceSize], encrypted_data_bytes[nonceSize:]
-	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
+	// Decode the combined IV and ciphertext from hex
+	combined, err := hex.DecodeString(ciphertextHex)
 	if err != nil {
 		return "", err
 	}
-	return string(plaintext[:]), nil
+
+	if len(combined) < aes.BlockSize {
+		return "", errors.New("ciphertext too short")
+	}
+
+	iv := combined[:aes.BlockSize]
+	ciphertext := combined[aes.BlockSize:]
+
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return "", err
+	}
+
+	// Decrypt the ciphertext
+	mode := cipher.NewCBCDecrypter(block, iv)
+	paddedPlaintext := make([]byte, len(ciphertext))
+	mode.CryptBlocks(paddedPlaintext, ciphertext)
+
+	// Remove padding
+	padding := int(paddedPlaintext[len(paddedPlaintext)-1])
+	plaintext := paddedPlaintext[:len(paddedPlaintext)-padding]
+	return string(plaintext), nil
 }
