@@ -1,14 +1,14 @@
 package utils
 
 import (
-	"fmt"
 	"math/rand"
+	"ncrypt/utils/logger"
 	"strconv"
 	"strings"
 )
 
 func GeneratePassword(digits bool, uppercase bool, special_char bool, length int) string {
-
+	logger.Log.Println("Generating password")
 	generated_password := ""
 
 	special_char_list := []rune{'!', '@', '#', '$', '%', '^', '&', '*'}
@@ -22,6 +22,7 @@ func GeneratePassword(digits bool, uppercase bool, special_char bool, length int
 		{'4', '5', '6', '7', '8', '9'},
 	}
 
+	logger.Log.Println("Setting initial characters as per constraints")
 	if digits {
 		generated_password += strconv.Itoa(rand.Intn(10))
 	}
@@ -34,6 +35,7 @@ func GeneratePassword(digits bool, uppercase bool, special_char bool, length int
 		generated_password += string(special_char_list[rand.Intn(len(special_char_list))])
 	}
 
+	logger.Log.Println("Randomly generating characters to match required password length")
 	for len(generated_password) <= length {
 		i := rand.Intn(len(character_matrix))
 		j := rand.Intn(len(character_matrix[i]))
@@ -57,7 +59,7 @@ func GeneratePassword(digits bool, uppercase bool, special_char bool, length int
 		}
 	}
 
-	fmt.Println(generated_password)
+	logger.Log.Println("Shuffling characters")
 	return shuffule(generated_password, rand.Intn(len(generated_password)))
 }
 

@@ -137,26 +137,32 @@ func (obj *SystemService) Logout() error {
 }
 
 func (obj *SystemService) Export(file_name string, file_path string) error {
+	logger.Log.Println("Exporting data...")
 	//Get system data
 	system_data, err := obj.GetSystemData()
 
 	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return err
 	}
 
+	logger.Log.Println("Fetching master password")
 	//Get master password data
 	master_password, err := obj.master_password_service.GetMasterPassword()
 
 	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return err
 	}
 
+	logger.Log.Println("Fetching login data")
 	//Get login data
 	login_service := InitBadgerLoginService()
 	login_service.Init()
 	login_data_list, err := login_service.GetAllLoginData()
 
 	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return err
 	}
 
@@ -169,6 +175,7 @@ func (obj *SystemService) Export(file_name string, file_path string) error {
 	file, err := os.Create(file_name + ".ncrypt")
 
 	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return err
 	}
 
@@ -176,76 +183,102 @@ func (obj *SystemService) Export(file_name string, file_path string) error {
 
 	export_data_bytes, err := json.Marshal(export_data)
 	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return err
 	}
 
+	logger.Log.Println("Encrypting export data")
 	//Encrpyt data using master_password
 	encrypted_export_data, err := encryptor.Encrypt(base64.StdEncoding.EncodeToString(export_data_bytes), master_password)
 	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return err
 	}
 
 	encrypted_export_data_bytes, err := base64.StdEncoding.DecodeString(encrypted_export_data)
 	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return err
 	}
 
 	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return err
 	}
 
-	file.Write(encrypted_export_data_bytes)
+	logger.Log.Println("Saving to file")
+	_, err = file.Write(encrypted_export_data_bytes)
 
+	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
+		return err
+	}
+
+	logger.Log.Printf("Export complete!")
 	return nil
 }
 
 func (obj *SystemService) Import(file_name string, file_path string, master_password string) error {
-
+	logger.Log.Println("Importing data")
 	file, err := os.Open(file_name)
 
 	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return err
 	}
 	defer file.Close()
 
+	logger.Log.Println("Reading import file")
 	data, err := io.ReadAll(file)
 	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return err
 	}
 
+	logger.Log.Println("Decrypting import content")
 	decrypted_data, err := encryptor.Decrypt(base64.StdEncoding.EncodeToString(data), encryptor.CreateHash(master_password))
 	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return err
 	}
 
 	decrypted_data_bytes, err := base64.StdEncoding.DecodeString(decrypted_data)
 	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return err
 	}
 
+	logger.Log.Println("Importing system data")
 	imported_data := new(ExportData)
 	json.Unmarshal(decrypted_data_bytes, &imported_data)
 
 	//Import system data
+	logger.Log.Println("Importing system data")
 	err = obj.setSystemData(imported_data.SYSTEM_DATA)
 	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return err
 	}
 
 	//Import master password
+	logger.Log.Println("Importing master password")
 	err = obj.master_password_service.importData(imported_data.MASTER_PASSWORD)
 	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return err
 	}
 
 	//Import login data
+	logger.Log.Println("Importing login data")
 	login_service := InitBadgerLoginService()
 	login_service.Init()
 	login_service.importData(imported_data.LOGIN_DATA)
 	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return err
 	}
 
+	logger.Log.Println("DONE")
 	return nil
 }
 
