@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"ncrypt/services"
+	"ncrypt/utils/jwt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -35,10 +36,13 @@ func (obj *SystemController) Login(ctx *gin.Context) {
 		return
 	}
 
-	if err := obj.service.Login(request_data["master_password"]); err != nil {
+	token, err := obj.service.Login(request_data["master_password"])
+	if err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
 		return
 	}
+
+	ctx.JSON(http.StatusOK, token)
 
 	ctx.Status(http.StatusOK)
 }
@@ -105,8 +109,10 @@ func (obj *SystemController) RegisterRoutes(rg *gin.RouterGroup) {
 
 	group.GET("/login_info", obj.GetLoginInfo)
 	group.POST("/login", obj.Login)
+	group.GET("/generate_password", obj.GeneratePassword)
+
+	group.Use(jwt.ValidateAuthorization())
 	group.POST("/logout", obj.Logout)
 	group.POST("/export", obj.Export)
 	group.POST("/import", obj.Import)
-	group.GET("/generate_password", obj.GeneratePassword)
 }

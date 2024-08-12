@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"ncrypt/models"
 	"ncrypt/services"
+	"ncrypt/utils/jwt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -102,6 +103,7 @@ func (obj *LoginController) UpdateLoginData(ctx *gin.Context) {
 func (obj *LoginController) RegisterRoutes(rg *gin.RouterGroup) {
 	group := rg.Group("/login")
 
+	group.Use(jwt.ValidateAuthorization())
 	group.POST("", obj.CreateLogin)
 
 	group.GET("", obj.GetLoginData)

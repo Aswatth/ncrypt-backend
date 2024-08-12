@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"ncrypt/services"
+	"ncrypt/utils/jwt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -44,33 +45,10 @@ func (obj *MasterPasswordController) UpdatePassword(ctx *gin.Context) {
 	ctx.Status(http.StatusOK)
 }
 
-func (obj *MasterPasswordController) Validate(ctx *gin.Context) {
-	var data map[string]string
-
-	if err := ctx.ShouldBindJSON(&data); err != nil {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
-		return
-	} else {
-		result, err := obj.service.Validate(data["master_password"])
-
-		if err != nil {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
-			return
-		}
-
-		if !result {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, "invalid password")
-			return
-		}
-
-		ctx.Status(http.StatusOK)
-	}
-}
-
 func (obj *MasterPasswordController) RegisterRoutes(rg *gin.RouterGroup) {
 	group := rg.Group("master_password")
 
+	group.Use(jwt.ValidateAuthorization())
 	group.POST("", obj.SetPassword)
 	group.PUT("", obj.UpdatePassword)
-	group.POST("/validate", obj.Validate)
 }
