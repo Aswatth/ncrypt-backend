@@ -3,6 +3,7 @@ package controllers
 import (
 	"ncrypt/services"
 	"ncrypt/utils/jwt"
+	"ncrypt/utils/logger"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -61,11 +62,13 @@ func (obj *SystemController) Export(ctx *gin.Context) {
 
 	//Check if given JSON is valid
 	if err := ctx.ShouldBindJSON(&request_data); err != nil {
+		logger.Log.Println(err.Error())
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if err := obj.service.Export(request_data["file_name"], request_data["path"]); err != nil {
+		logger.Log.Println(err.Error())
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
 		return
 	}
@@ -78,11 +81,13 @@ func (obj *SystemController) Import(ctx *gin.Context) {
 
 	//Check if given JSON is valid
 	if err := ctx.ShouldBindJSON(&request_data); err != nil {
+		logger.Log.Println(err.Error())
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if err := obj.service.Import(request_data["file_name"], request_data["path"], request_data["master_password"]); err != nil {
+		logger.Log.Println(err.Error())
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
 		return
 	}
@@ -110,9 +115,9 @@ func (obj *SystemController) RegisterRoutes(rg *gin.RouterGroup) {
 	group.GET("/login_info", obj.GetLoginInfo)
 	group.POST("/login", obj.Login)
 	group.GET("/generate_password", obj.GeneratePassword)
+	group.POST("/import", obj.Import)
 
 	group.Use(jwt.ValidateAuthorization())
 	group.POST("/logout", obj.Logout)
 	group.POST("/export", obj.Export)
-	group.POST("/import", obj.Import)
 }
