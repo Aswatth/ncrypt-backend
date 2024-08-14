@@ -189,7 +189,8 @@ func (obj *SystemService) Export(file_name string, file_path string) error {
 	export_data.LOGIN_DATA = login_data_list
 	export_data.MASTER_PASSWORD = master_password
 
-	file, err := os.Create(file_name + ".ncrypt")
+	logger.Log.Println("Exporting to " + file_path + "\\" + file_name)
+	file, err := os.Create(file_path + "\\" + file_name)
 
 	if err != nil {
 		logger.Log.Printf("ERROR: %s", err.Error())
@@ -237,7 +238,7 @@ func (obj *SystemService) Export(file_name string, file_path string) error {
 
 func (obj *SystemService) Import(file_name string, file_path string, master_password string) error {
 	logger.Log.Println("Importing data")
-	file, err := os.Open(file_name)
+	file, err := os.Open(file_path + "\\" + file_name)
 
 	if err != nil {
 		logger.Log.Printf("ERROR: %s", err.Error())
