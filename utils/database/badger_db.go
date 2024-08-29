@@ -11,7 +11,7 @@ type BadgerDb struct {
 }
 
 func (obj *BadgerDb) SetDatabase(database_name string) error {
-	obj.database_name = database_name
+	obj.database_name = "data/" + database_name
 
 	return nil
 }
