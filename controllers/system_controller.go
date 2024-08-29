@@ -5,6 +5,7 @@ import (
 	"ncrypt/utils/jwt"
 	"ncrypt/utils/logger"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -96,15 +97,21 @@ func (obj *SystemController) Import(ctx *gin.Context) {
 }
 
 func (obj *SystemController) GeneratePassword(ctx *gin.Context) {
-	request_data := make(map[string]interface{})
+	has_digits := ctx.Query("hasDigits") == "true"
+	has_upper_case := ctx.Query("hasUpperCase") == "true"
+	has_special_char := ctx.Query("hasSpecialChar") == "true"
+	length := 8
 
-	//Check if given JSON is valid
-	if err := ctx.ShouldBindJSON(&request_data); err != nil {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
-		return
+	if ctx.Query("length") != "" {
+		l, err := strconv.Atoi(ctx.Query("length"))
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+			return
+		}
+		length = l
 	}
 
-	password := obj.service.GeneratePassword(request_data["has_digits"].(bool), request_data["has_upper_case"].(bool), request_data["has_special_char"].(bool), int(request_data["length"].(float64)))
+	password := obj.service.GeneratePassword(has_digits, has_upper_case, has_special_char, length)
 
 	ctx.JSON(http.StatusOK, password)
 }
