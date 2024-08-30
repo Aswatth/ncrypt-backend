@@ -44,7 +44,7 @@ func (obj *SystemService) initSystem() {
 	_, err := obj.GetSystemData()
 
 	if err != nil && err == badger.ErrKeyNotFound {
-		err = obj.setSystemData(models.SystemData{LoginCount: 0, LastLoginDateTime: "", CurrentLoginDateTime: "", IsLoggedIn: false, AutomaticBackup: false, AutomaticBackupLocation: "", BackupFileName: ""})
+		err = obj.setSystemData(models.SystemData{LoginCount: 0, LastLoginDateTime: "", CurrentLoginDateTime: "", IsLoggedIn: false, AutomaticBackup: false, AutomaticBackupLocation: "", BackupFileName: "", SessionTimeInMinutes: 20})
 		if err != nil {
 			logger.Log.Printf("ERROR: %s", err.Error())
 		}
