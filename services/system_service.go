@@ -12,6 +12,8 @@ import (
 	"ncrypt/utils/jwt"
 	"ncrypt/utils/logger"
 	"os"
+	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/dgraph-io/badger/v4"
@@ -37,6 +39,19 @@ func (obj *SystemService) Init() {
 
 	obj.SESSION_TIME_IN_MINUTES = 20
 	logger.Log.Printf("System service initialized")
+
+	go obj.launchUI(os.Getenv("UI_EXECUTABLE_PATH"), []string{os.Getenv("PORT")})
+}
+
+func (obj *SystemService) launchUI(commandPath string, args []string) {
+	cmd := exec.Command(commandPath, args...)
+	// Run the command and wait for it to complete
+	err := cmd.Run()
+	if err != nil {
+		// Handle error
+		return
+	}
+	os.Exit(0)
 }
 
 func (obj *SystemService) initSystem(system_data models.SystemData) error {
@@ -91,6 +106,7 @@ func (obj *SystemService) Setup(master_password string, automatic_backup bool, b
 
 	logger.Log.Printf("Setting up system data")
 	if automatic_backup {
+		logger.Log.Printf("With automatic backup")
 		err = obj.initSystem(models.SystemData{LoginCount: 0, LastLoginDateTime: "", CurrentLoginDateTime: "", IsLoggedIn: false, AutomaticBackup: true, AutomaticBackupLocation: backup_folder_path, BackupFileName: backup_file_name, SessionTimeInMinutes: obj.SESSION_TIME_IN_MINUTES})
 		if err != nil {
 			logger.Log.Printf("ERROR: %s", err.Error())
@@ -330,4 +346,30 @@ type ExportData struct {
 
 func (obj *SystemService) GeneratePassword(has_digits bool, has_upper_case bool, has_special_char bool, length int) string {
 	return utils.GeneratePassword(has_digits, has_upper_case, has_special_char, length)
+}
+
+func (obj *SystemService) Backup() error {
+	logger.Log.Printf("Backing up data")
+	logger.Log.Printf("Getting system data")
+	system_data, err := obj.GetSystemData()
+
+	logger.Log.Printf("Checking for automatic backup setting")
+	if err == nil {
+		if system_data.AutomaticBackup {
+			logger.Log.Printf("Automatic backup is enabled")
+			file_name := system_data.BackupFileName + "_" + time.Now().Format(time.RFC3339) + ".ncrypt"
+			file_name = strings.Replace(file_name, ":", "-", -1)
+			logger.Log.Printf("Exporting data")
+			err = obj.Export(file_name, system_data.AutomaticBackupLocation)
+			if err != nil {
+				logger.Log.Printf("ERROR: %s", err.Error())
+			}
+		} else {
+			logger.Log.Printf("Automatic backup is not enabled")
+		}
+	} else {
+		logger.Log.Printf("ERROR: %s", err.Error())
+	}
+
+	return err
 }

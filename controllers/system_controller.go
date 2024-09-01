@@ -139,16 +139,29 @@ func (obj *SystemController) GeneratePassword(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, password)
 }
 
+func (obj *SystemController) Backup(ctx *gin.Context) {
+	err := obj.service.Backup()
+
+	if err != nil {
+		logger.Log.Println(err.Error())
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	ctx.Status(http.StatusOK)
+}
+
 func (obj *SystemController) RegisterRoutes(rg *gin.RouterGroup) {
 	group := rg.Group("system")
 
-	group.GET("/login_info", obj.GetLoginInfo)
 	group.POST("/setup", obj.Setup)
 	group.POST("/login", obj.Login)
 	group.GET("/generate_password", obj.GeneratePassword)
 	group.POST("/import", obj.Import)
+	group.POST("/backup", obj.Backup)
 
 	group.Use(jwt.ValidateAuthorization())
+	group.GET("/login_info", obj.GetLoginInfo)
 	group.POST("/logout", obj.Logout)
 	group.POST("/export", obj.Export)
 }
