@@ -21,6 +21,7 @@ type SystemService struct {
 	database                database.IDatabase
 	database_name           string
 	master_password_service IMasterPasswordService
+	SESSION_TIME_IN_MINUTES int
 }
 
 func (obj *SystemService) Init() {
@@ -30,25 +31,27 @@ func (obj *SystemService) Init() {
 	obj.database_name = "SYSTEM"
 	obj.database.SetDatabase(obj.database_name)
 
-	//Initialize system
-	logger.Log.Printf("Setting up intial data")
-	obj.initSystem()
-
 	logger.Log.Printf("Setting up master password service")
 	obj.master_password_service = InitBadgerMasterPasswordService()
 	obj.master_password_service.Init()
+
+	obj.SESSION_TIME_IN_MINUTES = 20
 	logger.Log.Printf("System service initialized")
 }
 
-func (obj *SystemService) initSystem() {
+func (obj *SystemService) initSystem(system_data models.SystemData) error {
 	_, err := obj.GetSystemData()
 
 	if err != nil && err == badger.ErrKeyNotFound {
-		err = obj.setSystemData(models.SystemData{LoginCount: 0, LastLoginDateTime: "", CurrentLoginDateTime: "", IsLoggedIn: false, AutomaticBackup: false, AutomaticBackupLocation: "", BackupFileName: "", SessionTimeInMinutes: 20})
+		err = obj.setSystemData(system_data)
 		if err != nil {
 			logger.Log.Printf("ERROR: %s", err.Error())
+			return err
 		}
+		err = nil
 	}
+
+	return err
 }
 
 func (obj *SystemService) setSystemData(system_data models.SystemData) error {
@@ -77,21 +80,40 @@ func (obj *SystemService) GetSystemData() (*models.SystemData, error) {
 	return &system_data, err
 }
 
+func (obj *SystemService) Setup(master_password string, automatic_backup bool, backup_folder_path string, backup_file_name string) error {
+	logger.Log.Printf("Setting up master password")
+	err := obj.master_password_service.SetMasterPassword(master_password)
+
+	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
+		return err
+	}
+
+	logger.Log.Printf("Setting up system data")
+	if automatic_backup {
+		err = obj.initSystem(models.SystemData{LoginCount: 0, LastLoginDateTime: "", CurrentLoginDateTime: "", IsLoggedIn: false, AutomaticBackup: true, AutomaticBackupLocation: backup_folder_path, BackupFileName: backup_file_name, SessionTimeInMinutes: obj.SESSION_TIME_IN_MINUTES})
+		if err != nil {
+			logger.Log.Printf("ERROR: %s", err.Error())
+			return err
+		}
+	} else {
+		err = obj.initSystem(models.SystemData{LoginCount: 0, LastLoginDateTime: "", CurrentLoginDateTime: "", IsLoggedIn: false, AutomaticBackup: false, AutomaticBackupLocation: "", BackupFileName: "", SessionTimeInMinutes: obj.SESSION_TIME_IN_MINUTES})
+		if err != nil {
+			logger.Log.Printf("ERROR: %s", err.Error())
+			return err
+		}
+	}
+
+	logger.Log.Printf("Initial setup completed")
+	return nil
+}
+
 func (obj *SystemService) Login(password string) (string, error) {
 	logger.Log.Printf("Logging in")
 	result, err := obj.master_password_service.Validate(password)
 
 	if err != nil {
 		logger.Log.Printf("ERROR: %s", err.Error())
-		if err.Error() == "Key not found" {
-			token, err := jwt.ShortLivedToken()
-
-			if err != nil {
-				logger.Log.Printf("ERROR: %s", err.Error())
-				return "", err
-			}
-			return token, nil
-		}
 		return "", err
 	}
 

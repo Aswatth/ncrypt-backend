@@ -29,6 +29,29 @@ func (obj *SystemController) GetLoginInfo(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, system_data)
 }
 
+func (obj *SystemController) Setup(ctx *gin.Context) {
+	request_data := make(map[string]any)
+
+	//Check if given JSON is valid
+	if err := ctx.ShouldBindJSON(&request_data); err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	err := obj.service.Setup(request_data["master_password"].(string),
+		request_data["automatic_backup"].(bool),
+		request_data["backup_folder_path"].(string),
+		request_data["backup_file_name"].(string))
+
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	ctx.Status(http.StatusOK)
+}
+
 func (obj *SystemController) Login(ctx *gin.Context) {
 	request_data := make(map[string]string)
 
@@ -120,6 +143,7 @@ func (obj *SystemController) RegisterRoutes(rg *gin.RouterGroup) {
 	group := rg.Group("system")
 
 	group.GET("/login_info", obj.GetLoginInfo)
+	group.POST("/setup", obj.Setup)
 	group.POST("/login", obj.Login)
 	group.GET("/generate_password", obj.GeneratePassword)
 	group.POST("/import", obj.Import)
