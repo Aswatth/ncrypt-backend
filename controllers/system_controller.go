@@ -151,6 +151,29 @@ func (obj *SystemController) Backup(ctx *gin.Context) {
 	ctx.Status(http.StatusOK)
 }
 
+func (obj *SystemController) UpdateAutomaticBackup(ctx *gin.Context) {
+	request_data := make(map[string]any)
+
+	//Check if given JSON is valid
+	if err := ctx.ShouldBindJSON(&request_data); err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	err := obj.service.UpdateAutomaticBackup(
+		request_data["automatic_backup"].(bool),
+		request_data["backup_folder_path"].(string),
+		request_data["backup_file_name"].(string))
+
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	ctx.Status(http.StatusOK)
+}
+
 func (obj *SystemController) RegisterRoutes(rg *gin.RouterGroup) {
 	group := rg.Group("system")
 
@@ -160,6 +183,7 @@ func (obj *SystemController) RegisterRoutes(rg *gin.RouterGroup) {
 	group.POST("/import", obj.Import)
 
 	group.Use(jwt.ValidateAuthorization())
+	group.PUT("/automatic_backup_setting", obj.UpdateAutomaticBackup)
 	group.GET("/login_info", obj.GetLoginInfo)
 	group.POST("/logout", obj.Logout)
 	group.POST("/export", obj.Export)

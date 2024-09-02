@@ -374,3 +374,28 @@ func (obj *SystemService) Backup() error {
 
 	return err
 }
+
+func (obj *SystemService) UpdateAutomaticBackup(automatic_backup bool, backup_folder string, file_name string) error {
+	logger.Log.Printf("Updating automatic backup data")
+
+	system_data, err := obj.GetSystemData()
+
+	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
+		return err
+	}
+
+	system_data.AutomaticBackup = automatic_backup
+	system_data.AutomaticBackupLocation = backup_folder
+	system_data.BackupFileName = file_name
+
+	err = obj.setSystemData(*system_data)
+
+	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
+		return err
+	}
+
+	logger.Log.Printf("Update completed successfully")
+	return nil
+}
