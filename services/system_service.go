@@ -51,6 +51,7 @@ func (obj *SystemService) launchUI(commandPath string, args []string) {
 		// Handle error
 		return
 	}
+	obj.Logout()
 	os.Exit(0)
 }
 
