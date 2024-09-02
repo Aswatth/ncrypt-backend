@@ -158,10 +158,10 @@ func (obj *SystemController) RegisterRoutes(rg *gin.RouterGroup) {
 	group.POST("/login", obj.Login)
 	group.GET("/generate_password", obj.GeneratePassword)
 	group.POST("/import", obj.Import)
-	group.POST("/backup", obj.Backup)
 
 	group.Use(jwt.ValidateAuthorization())
 	group.GET("/login_info", obj.GetLoginInfo)
 	group.POST("/logout", obj.Logout)
 	group.POST("/export", obj.Export)
+	group.POST("/backup", obj.Backup)
 }
