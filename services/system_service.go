@@ -97,8 +97,23 @@ func (obj *SystemService) GetSystemData() (*models.SystemData, error) {
 }
 
 func (obj *SystemService) Setup(master_password string, automatic_backup bool, backup_folder_path string, backup_file_name string) error {
+
+	system_data, err := obj.GetSystemData()
+
+	if err != nil {
+		if err != badger.ErrKeyNotFound {
+			logger.Log.Printf("ERROR: %s", err.Error())
+			return err
+		}
+	}
+
+	if system_data != nil {
+		logger.Log.Printf("ERROR: %s", "setup already completed")
+		return errors.New("setup already completed")
+	}
+
 	logger.Log.Printf("Setting up master password")
-	err := obj.master_password_service.SetMasterPassword(master_password)
+	err = obj.master_password_service.SetMasterPassword(master_password)
 
 	if err != nil {
 		logger.Log.Printf("ERROR: %s", err.Error())
