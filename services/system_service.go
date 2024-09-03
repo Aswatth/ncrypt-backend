@@ -40,7 +40,15 @@ func (obj *SystemService) Init() {
 	obj.SESSION_TIME_IN_MINUTES = 20
 	logger.Log.Printf("System service initialized")
 
-	go obj.launchUI(os.Getenv("UI_EXECUTABLE_PATH"), []string{os.Getenv("PORT")})
+	_, err := obj.GetSystemData()
+
+	isNewUser := "false"
+
+	if err != nil && err == badger.ErrKeyNotFound {
+		isNewUser = "true"
+	}
+
+	go obj.launchUI(os.Getenv("UI_EXECUTABLE_PATH"), []string{os.Getenv("PORT"), isNewUser})
 }
 
 func (obj *SystemService) launchUI(commandPath string, args []string) {
