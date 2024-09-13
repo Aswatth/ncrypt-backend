@@ -2,6 +2,7 @@ package database
 
 import (
 	"encoding/json"
+	"os"
 
 	"github.com/dgraph-io/badger/v4"
 )
@@ -11,7 +12,7 @@ type BadgerDb struct {
 }
 
 func (obj *BadgerDb) SetDatabase(database_name string) error {
-	obj.database_name = "data/" + database_name
+	obj.database_name = os.Getenv("STORAGE_FOLDER") + "/" + database_name
 
 	return nil
 }
