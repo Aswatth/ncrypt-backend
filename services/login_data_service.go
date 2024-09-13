@@ -13,12 +13,12 @@ import (
 	"github.com/joho/godotenv"
 )
 
-type LoginService struct {
+type LoginDataService struct {
 	database                database.IDatabase
 	master_password_service IMasterPasswordService
 }
 
-func (obj *LoginService) Init() {
+func (obj *LoginDataService) Init() {
 	logger.Log.Printf("Initializing login service")
 	logger.Log.Printf("Loading .env variables")
 	godotenv.Load("../.env")
@@ -33,11 +33,11 @@ func (obj *LoginService) Init() {
 	logger.Log.Printf("DONE")
 }
 
-func (obj *LoginService) GetLoginData(name string) (models.Login, error) {
+func (obj *LoginDataService) GetLoginData(login_data_name string) (models.Login, error) {
 	logger.Log.Printf("Getting login data")
-	name = strings.ToUpper(name)
+	login_data_name = strings.ToUpper(login_data_name)
 
-	fetched_data, err := obj.database.GetData(name)
+	fetched_data, err := obj.database.GetData(login_data_name)
 
 	if err != nil {
 		logger.Log.Printf("ERROR: %s", err.Error())
@@ -51,7 +51,7 @@ func (obj *LoginService) GetLoginData(name string) (models.Login, error) {
 	return login_data, err
 }
 
-func (obj *LoginService) GetDecryptedAccountPassword(login_data_name string, account_username string) (string, error) {
+func (obj *LoginDataService) GetDecryptedAccountPassword(login_data_name string, account_username string) (string, error) {
 	fetched_login_data, err := obj.GetLoginData(login_data_name)
 
 	if err != nil {
@@ -90,7 +90,7 @@ func (obj *LoginService) GetDecryptedAccountPassword(login_data_name string, acc
 	return decrypted_password, nil
 }
 
-func (obj *LoginService) GetAllLoginData() ([]models.Login, error) {
+func (obj *LoginDataService) GetAllLoginData() ([]models.Login, error) {
 	logger.Log.Printf("Getting all login data")
 	var login_data_list []models.Login
 
@@ -112,7 +112,7 @@ func (obj *LoginService) GetAllLoginData() ([]models.Login, error) {
 	return login_data_list, nil
 }
 
-func (obj *LoginService) setLoginData(login_data *models.Login) error {
+func (obj *LoginDataService) setLoginData(login_data *models.Login) error {
 
 	logger.Log.Printf("Checking for duplicate accounts")
 	//Check for duplicate account-username
@@ -154,7 +154,7 @@ func (obj *LoginService) setLoginData(login_data *models.Login) error {
 	return err
 }
 
-func (obj *LoginService) AddLoginData(login_data *models.Login) error {
+func (obj *LoginDataService) AddLoginData(login_data *models.Login) error {
 	logger.Log.Printf("Adding login data")
 	logger.Log.Printf("Checking for duplicate data")
 	existing_data, err := obj.GetLoginData(login_data.Name)
@@ -178,11 +178,11 @@ func (obj *LoginService) AddLoginData(login_data *models.Login) error {
 	return err
 }
 
-func (obj *LoginService) UpdateLoginData(name string, login_data *models.Login) error {
+func (obj *LoginDataService) UpdateLoginData(login_data_name string, login_data *models.Login) error {
 	logger.Log.Printf("Updating login data")
 
 	logger.Log.Printf("Checking for name conflicts")
-	if name != login_data.Name {
+	if login_data_name != login_data.Name {
 		existing_data, err := obj.GetLoginData(login_data.Name)
 
 		if err != nil && err != badger.ErrKeyNotFound {
@@ -195,7 +195,7 @@ func (obj *LoginService) UpdateLoginData(name string, login_data *models.Login) 
 			return err
 		}
 
-		err = obj.DeleteLoginData(name)
+		err = obj.DeleteLoginData(login_data_name)
 
 		if err != nil {
 			logger.Log.Printf("ERROR: %s", err.Error())
@@ -234,9 +234,9 @@ func (obj *LoginService) UpdateLoginData(name string, login_data *models.Login) 
 	return err
 }
 
-func (obj *LoginService) DeleteLoginData(name string) error {
+func (obj *LoginDataService) DeleteLoginData(login_data_name string) error {
 	logger.Log.Printf("Deleting login data")
-	err := obj.database.DeleteData(strings.ToUpper(name))
+	err := obj.database.DeleteData(strings.ToUpper(login_data_name))
 	if err != nil {
 		logger.Log.Printf("ERROR: %s", err.Error())
 	}
@@ -244,7 +244,7 @@ func (obj *LoginService) DeleteLoginData(name string) error {
 	return err
 }
 
-func (obj *LoginService) recryptData(data interface{}) error {
+func (obj *LoginDataService) recryptData(data interface{}) error {
 	logger.Log.Printf("Re-crpyting login data")
 	//Extract password data
 	old_password := data.(map[string]string)["old_password"]
@@ -282,7 +282,7 @@ func (obj *LoginService) recryptData(data interface{}) error {
 	return nil
 }
 
-func (obj *LoginService) importData(login_data_list []models.Login) error {
+func (obj *LoginDataService) importData(login_data_list []models.Login) error {
 
 	for _, login_data := range login_data_list {
 		err := obj.database.AddData(strings.ToUpper(login_data.Name), login_data)

@@ -12,7 +12,7 @@ import (
 )
 
 type LoginDataController struct {
-	service services.ILoginService
+	service services.ILoginDataService
 }
 
 func (obj *LoginDataController) Init() {
