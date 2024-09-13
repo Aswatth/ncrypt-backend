@@ -127,7 +127,7 @@ func TestGetMasterPassword(t *testing.T) {
 	t.Cleanup(master_password_service_test_cleanup)
 }
 
-func TestImport(t *testing.T) {
+func TestMasterPasswordImport(t *testing.T) {
 	service := new(MasterPasswordService)
 	service.Init()
 
