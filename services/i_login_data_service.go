@@ -10,7 +10,7 @@ type ILoginDataService interface {
 	AddLoginData(login_data *models.Login) error
 	UpdateLoginData(login_data_name string, login_data *models.Login) error
 	DeleteLoginData(login_data_name string) error
-	recryptData(data interface{}) error
+	recryptData(old_password string) error
 	importData(login_datas []models.Login) error
 }
 

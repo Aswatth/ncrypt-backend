@@ -67,13 +67,6 @@ func (obj *MasterPasswordService) UpdateMasterPassword(password string) error {
 		return nil
 	}
 
-	new_password, err := obj.GetMasterPassword()
-
-	if err != nil {
-		logger.Log.Printf("ERROR: %s", err.Error())
-		return nil
-	}
-
 	logger.Log.Printf("Creating new broadcast")
 	//Setup broadcast to update encrypted data across services
 	broadcast := utils.NewBroadcast()
@@ -86,10 +79,7 @@ func (obj *MasterPasswordService) UpdateMasterPassword(password string) error {
 	logger.Log.Printf("Creating event")
 	event_data := utils.Event{
 		Type: "UPDATE_MASTER_PASSWORD",
-		Data: map[string]string{
-			"old_password": old_password,
-			"new_password": new_password,
-		},
+		Data: old_password,
 	}
 
 	logger.Log.Printf("Broadcasting event")

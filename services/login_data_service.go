@@ -244,10 +244,8 @@ func (obj *LoginDataService) DeleteLoginData(login_data_name string) error {
 	return err
 }
 
-func (obj *LoginDataService) recryptData(data interface{}) error {
+func (obj *LoginDataService) recryptData(old_password string) error {
 	logger.Log.Printf("Re-crpyting login data")
-	//Extract password data
-	old_password := data.(map[string]string)["old_password"]
 
 	//Get all login data
 	login_list, err := obj.GetAllLoginData()
