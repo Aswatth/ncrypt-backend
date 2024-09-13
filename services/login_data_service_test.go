@@ -312,8 +312,7 @@ func TestUpdateLoginData_ChangeAll(t *testing.T) {
 func TestUpdateLoginData_ConflictingName(t *testing.T) {
 	login_service_test_init()
 
-	login_datas := []models.Login{
-		{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}}, 
+	login_datas := []models.Login{{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}},
 		{Name: "email", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}},
 	}
 
