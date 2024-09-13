@@ -3,6 +3,7 @@ package controllers
 import (
 	"ncrypt/services"
 	"ncrypt/utils/jwt"
+	"ncrypt/utils/logger"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -13,8 +14,10 @@ type MasterPasswordController struct {
 }
 
 func (obj *MasterPasswordController) Init() {
+	logger.Log.Printf("Initializing master password controller")
 	obj.service = services.InitBadgerMasterPasswordService()
 	obj.service.Init()
+	logger.Log.Printf("Initialization complete!")
 }
 
 func (obj *MasterPasswordController) SetPassword(ctx *gin.Context) {
@@ -22,9 +25,11 @@ func (obj *MasterPasswordController) SetPassword(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindJSON(&data); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return
 	} else if err := obj.service.SetMasterPassword(data["master_password"]); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return
 	}
 
@@ -36,9 +41,11 @@ func (obj *MasterPasswordController) UpdatePassword(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindJSON(&data); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return
 	} else if err := obj.service.UpdateMasterPassword(data["master_password"]); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return
 	}
 
@@ -50,17 +57,20 @@ func (obj *MasterPasswordController) ValidatePassword(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindJSON(&data); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return
-	} 
-	
+	}
+
 	result, err := obj.service.Validate(data["master_password"])
 
 	if err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return
 	}
 	if !result {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, "incorrect password")
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return
 	}
 

@@ -18,11 +18,12 @@ func (obj *SystemController) Init(service services.SystemService) {
 	obj.service = service
 }
 
-func (obj *SystemController) GetLoginInfo(ctx *gin.Context) {
+func (obj *SystemController) GetSystemData(ctx *gin.Context) {
 	system_data, err := obj.service.GetSystemData()
 
 	if err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return
 	}
 
@@ -34,8 +35,8 @@ func (obj *SystemController) Setup(ctx *gin.Context) {
 
 	//Check if given JSON is valid
 	if err := ctx.ShouldBindJSON(&request_data); err != nil {
-		logger.Log.Printf("ERROR: %s", err.Error())
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return
 	}
 
@@ -46,35 +47,37 @@ func (obj *SystemController) Setup(ctx *gin.Context) {
 
 	if err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return
 	}
 
 	ctx.Status(http.StatusOK)
 }
 
-func (obj *SystemController) Login(ctx *gin.Context) {
+func (obj *SystemController) SignIn(ctx *gin.Context) {
 	request_data := make(map[string]string)
 
 	//Check if given JSON is valid
 	if err := ctx.ShouldBindJSON(&request_data); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return
 	}
 
-	token, err := obj.service.Login(request_data["master_password"])
+	token, err := obj.service.SignIn(request_data["master_password"])
 	if err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return
 	}
 
 	ctx.JSON(http.StatusOK, token)
-
-	ctx.Status(http.StatusOK)
 }
 
 func (obj *SystemController) Logout(ctx *gin.Context) {
 	if err := obj.service.Logout(); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return
 	}
 
@@ -86,14 +89,14 @@ func (obj *SystemController) Export(ctx *gin.Context) {
 
 	//Check if given JSON is valid
 	if err := ctx.ShouldBindJSON(&request_data); err != nil {
-		logger.Log.Println(err.Error())
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return
 	}
 
 	if err := obj.service.Export(request_data["file_name"], request_data["path"]); err != nil {
-		logger.Log.Println(err.Error())
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return
 	}
 
@@ -105,14 +108,14 @@ func (obj *SystemController) Import(ctx *gin.Context) {
 
 	//Check if given JSON is valid
 	if err := ctx.ShouldBindJSON(&request_data); err != nil {
-		logger.Log.Println(err.Error())
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return
 	}
 
 	if err := obj.service.Import(request_data["file_name"], request_data["path"], request_data["master_password"]); err != nil {
-		logger.Log.Println(err.Error())
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return
 	}
 
@@ -129,6 +132,7 @@ func (obj *SystemController) GeneratePassword(ctx *gin.Context) {
 		l, err := strconv.Atoi(ctx.Query("length"))
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+			logger.Log.Printf("ERROR: %s", err.Error())
 			return
 		}
 		length = l
@@ -143,8 +147,8 @@ func (obj *SystemController) Backup(ctx *gin.Context) {
 	err := obj.service.Backup()
 
 	if err != nil {
-		logger.Log.Println(err.Error())
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return
 	}
 
@@ -156,8 +160,8 @@ func (obj *SystemController) UpdateAutomaticBackup(ctx *gin.Context) {
 
 	//Check if given JSON is valid
 	if err := ctx.ShouldBindJSON(&request_data); err != nil {
-		logger.Log.Printf("ERROR: %s", err.Error())
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return
 	}
 
@@ -168,6 +172,7 @@ func (obj *SystemController) UpdateAutomaticBackup(ctx *gin.Context) {
 
 	if err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return
 	}
 
@@ -178,13 +183,13 @@ func (obj *SystemController) RegisterRoutes(rg *gin.RouterGroup) {
 	group := rg.Group("system")
 
 	group.POST("/setup", obj.Setup)
-	group.POST("/login", obj.Login)
+	group.POST("/signin", obj.SignIn)
 	group.GET("/generate_password", obj.GeneratePassword)
 	group.POST("/import", obj.Import)
 
 	group.Use(jwt.ValidateAuthorization())
 	group.PUT("/automatic_backup_setting", obj.UpdateAutomaticBackup)
-	group.GET("/login_info", obj.GetLoginInfo)
+	group.GET("/data", obj.GetSystemData)
 	group.POST("/logout", obj.Logout)
 	group.POST("/export", obj.Export)
 	group.POST("/backup", obj.Backup)
