@@ -390,6 +390,85 @@ func TestGetDecryptedAccountPassword_InvalidUsername(t *testing.T) {
 	t.Cleanup(login_service_test_cleanup)
 }
 
+func TestLoginDataImport(t *testing.T) {
+	login_service_test_init()
+
+	login_datas := []models.Login{
+		{Name: "github1", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}},
+		{Name: "github2", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}},
+	}
+
+	login_service := new(LoginDataService)
+	login_service.Init()
+
+	err := login_service.importData(login_datas)
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	fetched_data_list, err := login_service.GetAllLoginData()
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	if len(fetched_data_list) != len(login_datas) {
+		t.Errorf("Mismatch in count\nExpected:\t%d\nActual:\t%d", len(login_datas), len(fetched_data_list))
+	}
+
+	for index := range login_datas {
+		compareLoginData(t, login_datas[index], fetched_data_list[index])
+	}
+
+	//Clean up
+	t.Cleanup(login_service_test_cleanup)
+}
+
+func TestLoginDataRecrpyt(t *testing.T) {
+	master_password_service := new(MasterPasswordService)
+	master_password_service.Init()
+
+	master_password_service.SetMasterPassword("12345")
+
+	old_password, err := master_password_service.GetMasterPassword()
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	login_datas := []models.Login{
+		{Name: "github1", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}},
+		{Name: "github2", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}},
+	}
+
+	login_service := new(LoginDataService)
+	login_service.Init()
+
+	for _, login_data := range login_datas {
+		login_service.AddLoginData(&login_data)
+	}
+
+	err = login_service.recryptData(old_password)
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	fetched_data_list, err := login_service.GetAllLoginData()
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	if len(fetched_data_list) != len(login_datas) {
+		t.Errorf("Mismatch in count\nExpected:\t%d\nActual:\t%d", len(login_datas), len(fetched_data_list))
+	}
+
+	//Clean up
+	t.Cleanup(login_service_test_cleanup)
+}
+
 func login_service_test_cleanup() {
 	os.RemoveAll(os.Getenv("STORAGE_FOLDER"))
 	os.RemoveAll("logs")
