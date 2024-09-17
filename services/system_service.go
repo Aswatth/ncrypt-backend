@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/dgraph-io/badger/v4"
+	"github.com/joho/godotenv"
 )
 
 type SystemService struct {
@@ -27,9 +28,12 @@ type SystemService struct {
 }
 
 func (obj *SystemService) Init() {
+
 	logger.Log.Printf("Initializing system service")
 	logger.Log.Printf("Setting up database")
-	obj.database = &database.BadgerDb{}
+	godotenv.Load("../.env")
+
+	obj.database = database.InitBadgerDb()
 	obj.database_name = "SYSTEM"
 	obj.database.SetDatabase(obj.database_name)
 
@@ -129,26 +133,22 @@ func (obj *SystemService) Setup(master_password string, automatic_backup bool, b
 	}
 
 	logger.Log.Printf("Setting up system data")
-	if automatic_backup {
-		logger.Log.Printf("With automatic backup")
-		err = obj.initSystem(models.SystemData{LoginCount: 0, LastLoginDateTime: "", CurrentLoginDateTime: "", IsLoggedIn: false, AutomaticBackup: true, AutomaticBackupLocation: backup_folder_path, BackupFileName: backup_file_name, SessionTimeInMinutes: obj.SESSION_TIME_IN_MINUTES})
-		if err != nil {
-			logger.Log.Printf("ERROR: %s", err.Error())
-			return err
-		}
-	} else {
-		err = obj.initSystem(models.SystemData{LoginCount: 0, LastLoginDateTime: "", CurrentLoginDateTime: "", IsLoggedIn: false, AutomaticBackup: false, AutomaticBackupLocation: "", BackupFileName: "", SessionTimeInMinutes: obj.SESSION_TIME_IN_MINUTES})
-		if err != nil {
-			logger.Log.Printf("ERROR: %s", err.Error())
-			return err
-		}
+	err = obj.initSystem(models.SystemData{LoginCount: 0, LastLoginDateTime: "", CurrentLoginDateTime: "", IsLoggedIn: false, AutomaticBackup: true, AutomaticBackupLocation: backup_folder_path, BackupFileName: backup_file_name, SessionTimeInMinutes: obj.SESSION_TIME_IN_MINUTES})
+	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
+		return err
+	}
+	err = obj.UpdateAutomaticBackup(automatic_backup, backup_folder_path, backup_file_name)
+	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
+		return err
 	}
 
 	logger.Log.Printf("Initial setup completed")
 	return nil
 }
 
-func (obj *SystemService) Login(password string) (string, error) {
+func (obj *SystemService) SignIn(password string) (string, error) {
 	logger.Log.Printf("Logging in")
 	result, err := obj.master_password_service.Validate(password)
 
@@ -201,6 +201,12 @@ func (obj *SystemService) Logout() error {
 		return err
 	}
 
+	if !system_data.IsLoggedIn {
+		my_error := errors.New("not logged in to logout")
+		logger.Log.Printf("ERROR: %s", my_error.Error())
+		return my_error
+	}
+
 	system_data.IsLoggedIn = false
 	system_data.LastLoginDateTime = system_data.CurrentLoginDateTime
 
@@ -217,6 +223,11 @@ func (obj *SystemService) Logout() error {
 
 func (obj *SystemService) Export(file_name string, file_path string) error {
 	logger.Log.Println("Exporting data...")
+
+	if !strings.HasSuffix(file_name, ".ncrypt") {
+		return errors.New("incorrect file format")
+	}
+
 	//Get system data
 	system_data, err := obj.GetSystemData()
 
@@ -252,7 +263,14 @@ func (obj *SystemService) Export(file_name string, file_path string) error {
 	export_data.MASTER_PASSWORD = master_password
 
 	logger.Log.Println("Exporting to " + file_path + "\\" + file_name)
-	file, err := os.Create(file_path + "\\" + file_name)
+	var path string
+	if file_path != "" {
+		path = file_path + "\\" + file_name
+	} else {
+		path = file_name
+	}
+
+	file, err := os.Create(path)
 
 	if err != nil {
 		logger.Log.Printf("ERROR: %s", err.Error())
@@ -276,11 +294,6 @@ func (obj *SystemService) Export(file_name string, file_path string) error {
 	}
 
 	encrypted_export_data_bytes, err := base64.StdEncoding.DecodeString(encrypted_export_data)
-	if err != nil {
-		logger.Log.Printf("ERROR: %s", err.Error())
-		return err
-	}
-
 	if err != nil {
 		logger.Log.Printf("ERROR: %s", err.Error())
 		return err
@@ -408,6 +421,11 @@ func (obj *SystemService) UpdateAutomaticBackup(automatic_backup bool, backup_fo
 		return err
 	}
 
+	if automatic_backup {
+		if file_name == "" {
+			return errors.New("file name cannot be empty")
+		}
+	}
 	system_data.AutomaticBackup = automatic_backup
 	system_data.AutomaticBackupLocation = backup_folder
 	system_data.BackupFileName = file_name
