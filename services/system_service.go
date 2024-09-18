@@ -365,7 +365,7 @@ func (obj *SystemService) Import(file_name string, file_path string, master_pass
 	logger.Log.Println("Importing login data")
 	login_service := InitBadgerLoginService()
 	login_service.Init()
-	login_service.importData(imported_data.LOGIN_DATA)
+	err = login_service.importData(imported_data.LOGIN_DATA)
 	if err != nil {
 		logger.Log.Printf("ERROR: %s", err.Error())
 		return err
