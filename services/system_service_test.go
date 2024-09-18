@@ -217,6 +217,9 @@ func TestExport_CurrentFolder(t *testing.T) {
 		t.Error("Exported file not found")
 	} else {
 		err = os.Remove("test_export.ncrypt")
+		if err != nil {
+			t.Error(err.Error())
+		}
 	}
 
 	t.Cleanup(system_service_test_cleanup)
@@ -242,6 +245,9 @@ func TestExport_WithCustomPath(t *testing.T) {
 		t.Error("Exported file not found")
 	} else {
 		err = os.Remove("..\\models\\test_export.ncrypt")
+		if err != nil {
+			t.Error(err.Error())
+		}
 	}
 
 	t.Cleanup(system_service_test_cleanup)
@@ -412,6 +418,9 @@ func TestImport(t *testing.T) {
 		}
 	} else {
 		err = os.Remove("test_export.ncrypt")
+		if err != nil {
+			t.Error(err.Error())
+		}
 	}
 
 	t.Cleanup(system_service_test_cleanup)
@@ -445,6 +454,9 @@ func TestImport_WithIncorrectMasterPassword(t *testing.T) {
 		}
 	} else {
 		err = os.Remove("test_export.ncrypt")
+		if err != nil {
+			t.Error(err.Error())
+		}
 	}
 
 	t.Cleanup(system_service_test_cleanup)
@@ -494,6 +506,9 @@ func TestBackup(t *testing.T) {
 		t.Error("Backup file not found")
 	} else {
 		err = os.Remove(backup_file_name)
+		if err != nil {
+			t.Error(err.Error())
+		}
 	}
 
 	t.Cleanup(system_service_test_cleanup)
