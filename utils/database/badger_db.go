@@ -11,11 +11,10 @@ type BadgerDb struct {
 	database_name string
 }
 
-func (obj *BadgerDb) SetDatabase(database_name string) error {
+func (obj *BadgerDb) SetDatabase(database_name string) {
 	obj.database_name = os.Getenv("STORAGE_FOLDER") + "/" + database_name
-
-	return nil
 }
+
 func (obj *BadgerDb) GetData(table_name string, params ...string) (interface{}, error) {
 	db, err := badger.Open(badger.DefaultOptions(obj.database_name))
 

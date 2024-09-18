@@ -1,7 +1,7 @@
 package database
 
 type IDatabase interface {
-	SetDatabase(database_name string) error
+	SetDatabase(database_name string)
 	GetData(table_name string, params ...string) (interface{}, error)
 	GetAllData(params ...string) ([]interface{}, error)
 	AddData(table_name string, data interface{}) error
