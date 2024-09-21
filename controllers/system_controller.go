@@ -5,7 +5,6 @@ import (
 	"ncrypt/utils/jwt"
 	"ncrypt/utils/logger"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -123,22 +122,12 @@ func (obj *SystemController) Import(ctx *gin.Context) {
 }
 
 func (obj *SystemController) GeneratePassword(ctx *gin.Context) {
-	has_digits := ctx.Query("hasDigits") == "true"
-	has_upper_case := ctx.Query("hasUpperCase") == "true"
-	has_special_char := ctx.Query("hasSpecialChar") == "true"
-	length := 8
+	password := obj.service.GeneratePassword()
 
-	if ctx.Query("length") != "" {
-		l, err := strconv.Atoi(ctx.Query("length"))
-		if err != nil {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
-			logger.Log.Printf("ERROR: %s", err.Error())
-			return
-		}
-		length = l
+	if password == "" {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, "Error occured while generating password")
+		return
 	}
-
-	password := obj.service.GeneratePassword(has_digits, has_upper_case, has_special_char, length)
 
 	ctx.JSON(http.StatusOK, password)
 }
@@ -179,6 +168,39 @@ func (obj *SystemController) UpdateAutomaticBackup(ctx *gin.Context) {
 	ctx.Status(http.StatusOK)
 }
 
+func (obj *SystemController) GetPasswordGeneratorPreference(ctx *gin.Context) {
+	result, err := obj.service.GetPasswordGeneratorPreference()
+
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		logger.Log.Printf("ERROR: %s", err.Error())
+		return
+	}
+
+	ctx.JSON(http.StatusOK, result)
+}
+
+func (obj *SystemController) UpdatePasswordGeneratorPreference(ctx *gin.Context) {
+	request_data := make(map[string]interface{})
+
+	//Check if given JSON is valid
+	if err := ctx.ShouldBindJSON(&request_data); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		logger.Log.Printf("ERROR: %s", err.Error())
+		return
+	}
+
+	err := obj.service.UpdatePasswordGeneratorPreference(request_data)
+
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		logger.Log.Printf("ERROR: %s", err.Error())
+		return
+	}
+
+	ctx.Status(http.StatusOK)
+}
+
 func (obj *SystemController) RegisterRoutes(rg *gin.RouterGroup) {
 	group := rg.Group("system")
 
@@ -189,6 +211,10 @@ func (obj *SystemController) RegisterRoutes(rg *gin.RouterGroup) {
 
 	group.Use(jwt.ValidateAuthorization())
 	group.PUT("/automatic_backup_setting", obj.UpdateAutomaticBackup)
+
+	group.GET("/password_generator_preference", obj.GetPasswordGeneratorPreference)
+	group.PUT("/password_generator_preference", obj.UpdatePasswordGeneratorPreference)
+
 	group.GET("/data", obj.GetSystemData)
 	group.POST("/logout", obj.Logout)
 	group.POST("/export", obj.Export)

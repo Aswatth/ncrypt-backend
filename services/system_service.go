@@ -133,7 +133,14 @@ func (obj *SystemService) Setup(master_password string, automatic_backup bool, b
 	}
 
 	logger.Log.Printf("Setting up system data")
-	err = obj.initSystem(models.SystemData{LoginCount: 0, LastLoginDateTime: "", CurrentLoginDateTime: "", IsLoggedIn: false, AutomaticBackup: true, AutomaticBackupLocation: backup_folder_path, BackupFileName: backup_file_name, SessionTimeInMinutes: obj.SESSION_TIME_IN_MINUTES})
+
+	password_generator_preferance := new(models.PasswordGeneratorPreference)
+	password_generator_preferance.HasDigits = false
+	password_generator_preferance.HasUpperCase = false
+	password_generator_preferance.HasSpecialChar = false
+	password_generator_preferance.Length = 8
+
+	err = obj.initSystem(models.SystemData{LoginCount: 0, LastLoginDateTime: "", CurrentLoginDateTime: "", IsLoggedIn: false, AutomaticBackup: true, AutomaticBackupLocation: backup_folder_path, BackupFileName: backup_file_name, SessionTimeInMinutes: obj.SESSION_TIME_IN_MINUTES, PasswordGeneratorPreference: *password_generator_preferance})
 	if err != nil {
 		logger.Log.Printf("ERROR: %s", err.Error())
 		return err
@@ -381,8 +388,14 @@ type ExportData struct {
 	MASTER_PASSWORD string            `json:"MASTER_PASSWORD" bson:"MASTER_PASSWORD"`
 }
 
-func (obj *SystemService) GeneratePassword(has_digits bool, has_upper_case bool, has_special_char bool, length int) string {
-	return utils.GeneratePassword(has_digits, has_upper_case, has_special_char, length)
+func (obj *SystemService) GeneratePassword() string {
+	password_preference, err := obj.GetPasswordGeneratorPreference()
+
+	if err != nil {
+		return ""
+	}
+
+	return utils.GeneratePassword(password_preference.HasDigits, password_preference.HasUpperCase, password_preference.HasSpecialChar, password_preference.Length)
 }
 
 func (obj *SystemService) Backup() error {
@@ -438,5 +451,35 @@ func (obj *SystemService) UpdateAutomaticBackup(automatic_backup bool, backup_fo
 	}
 
 	logger.Log.Printf("Update completed successfully")
+	return nil
+}
+
+func (obj *SystemService) GetPasswordGeneratorPreference() (*models.PasswordGeneratorPreference, error) {
+	system_data, err := obj.GetSystemData()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &system_data.PasswordGeneratorPreference, err
+}
+
+func (obj *SystemService) UpdatePasswordGeneratorPreference(data map[string]interface{}) error {
+	system_data, err := obj.GetSystemData()
+
+	if err != nil {
+		return err
+	}
+
+	password_generator_preference := new(models.PasswordGeneratorPreference)
+	password_generator_preference.FromMap(data)
+
+	system_data.PasswordGeneratorPreference = *password_generator_preference
+	err = obj.setSystemData(*system_data)
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
