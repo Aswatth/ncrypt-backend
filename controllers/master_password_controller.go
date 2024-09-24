@@ -43,7 +43,7 @@ func (obj *MasterPasswordController) UpdatePassword(ctx *gin.Context) {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
 		logger.Log.Printf("ERROR: %s", err.Error())
 		return
-	} else if err := obj.service.UpdateMasterPassword(data["master_password"]); err != nil {
+	} else if err := obj.service.UpdateMasterPassword(data["old_master_password"], data["new_master_password"]); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
 		logger.Log.Printf("ERROR: %s", err.Error())
 		return
