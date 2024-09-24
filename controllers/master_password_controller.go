@@ -70,7 +70,7 @@ func (obj *MasterPasswordController) ValidatePassword(ctx *gin.Context) {
 	}
 	if !result {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, "incorrect password")
-		logger.Log.Printf("ERROR: %s", err.Error())
+		logger.Log.Printf("ERROR: %s", "incorrect password")
 		return
 	}
 
