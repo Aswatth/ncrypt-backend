@@ -108,7 +108,7 @@ func (obj *SystemService) GetSystemData() (*models.SystemData, error) {
 	return &system_data, err
 }
 
-func (obj *SystemService) Setup(master_password string, automatic_backup bool, backup_folder_path string, backup_file_name string) error {
+func (obj *SystemService) Setup(master_password string, auto_backup_setting map[string]interface{}) error {
 
 	system_data, err := obj.GetSystemData()
 
@@ -134,18 +134,15 @@ func (obj *SystemService) Setup(master_password string, automatic_backup bool, b
 
 	logger.Log.Printf("Setting up system data")
 
+	new_auto_backup_setting := new(models.AutoBackupSetting).FromMap(auto_backup_setting)
+
 	password_generator_preferance := new(models.PasswordGeneratorPreference)
 	password_generator_preferance.HasDigits = false
 	password_generator_preferance.HasUpperCase = false
 	password_generator_preferance.HasSpecialChar = false
 	password_generator_preferance.Length = 8
 
-	err = obj.initSystem(models.SystemData{LoginCount: 0, LastLoginDateTime: "", CurrentLoginDateTime: "", IsLoggedIn: false, AutomaticBackup: true, AutomaticBackupLocation: backup_folder_path, BackupFileName: backup_file_name, SessionDurationInMinutes: obj.SESSION_DURATION_IN_MINUTES, PasswordGeneratorPreference: *password_generator_preferance})
-	if err != nil {
-		logger.Log.Printf("ERROR: %s", err.Error())
-		return err
-	}
-	err = obj.UpdateAutomaticBackup(automatic_backup, backup_folder_path, backup_file_name)
+	err = obj.initSystem(models.SystemData{LoginCount: 0, LastLoginDateTime: "", CurrentLoginDateTime: "", IsLoggedIn: false, PasswordGeneratorPreference: *password_generator_preferance, AutoBackupSetting: *new_auto_backup_setting, SessionDurationInMinutes: obj.SESSION_DURATION_IN_MINUTES})
 	if err != nil {
 		logger.Log.Printf("ERROR: %s", err.Error())
 		return err
@@ -404,13 +401,15 @@ func (obj *SystemService) Backup() error {
 	system_data, err := obj.GetSystemData()
 
 	logger.Log.Printf("Checking for automatic backup setting")
+	auto_backup_setting := system_data.AutoBackupSetting
+
 	if err == nil {
-		if system_data.AutomaticBackup {
+		if auto_backup_setting.IsEnabled {
 			logger.Log.Printf("Automatic backup is enabled")
-			file_name := system_data.BackupFileName + "_" + time.Now().Format(time.RFC3339) + ".ncrypt"
+			file_name := auto_backup_setting.BackupFileName + "_" + time.Now().Format(time.RFC3339) + ".ncrypt"
 			file_name = strings.Replace(file_name, ":", "-", -1)
 			logger.Log.Printf("Exporting data")
-			err = obj.Export(file_name, system_data.AutomaticBackupLocation)
+			err = obj.Export(file_name, auto_backup_setting.BackupLocation)
 			if err != nil {
 				logger.Log.Printf("ERROR: %s", err.Error())
 			}
@@ -424,7 +423,7 @@ func (obj *SystemService) Backup() error {
 	return err
 }
 
-func (obj *SystemService) UpdateAutomaticBackup(automatic_backup bool, backup_folder string, file_name string) error {
+func (obj *SystemService) UpdateAutomaticBackup(updated_auto_backup_setting map[string]interface{}) error {
 	logger.Log.Printf("Updating automatic backup data")
 
 	system_data, err := obj.GetSystemData()
@@ -434,14 +433,15 @@ func (obj *SystemService) UpdateAutomaticBackup(automatic_backup bool, backup_fo
 		return err
 	}
 
-	if automatic_backup {
-		if file_name == "" {
+	auto_backup_setting := new(models.AutoBackupSetting).FromMap(updated_auto_backup_setting)
+
+	if auto_backup_setting.IsEnabled {
+		if auto_backup_setting.BackupFileName == "" {
 			return errors.New("file name cannot be empty")
 		}
 	}
-	system_data.AutomaticBackup = automatic_backup
-	system_data.AutomaticBackupLocation = backup_folder
-	system_data.BackupFileName = file_name
+
+	system_data.AutoBackupSetting = *auto_backup_setting
 
 	err = obj.setSystemData(*system_data)
 

@@ -40,9 +40,7 @@ func (obj *SystemController) Setup(ctx *gin.Context) {
 	}
 
 	err := obj.service.Setup(request_data["master_password"].(string),
-		request_data["automatic_backup"].(bool),
-		request_data["backup_folder_path"].(string),
-		request_data["backup_file_name"].(string))
+		request_data["auto_backup_setting"].(map[string]interface{}),)
 
 	if err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
@@ -154,10 +152,7 @@ func (obj *SystemController) UpdateAutomaticBackup(ctx *gin.Context) {
 		return
 	}
 
-	err := obj.service.UpdateAutomaticBackup(
-		request_data["automatic_backup"].(bool),
-		request_data["backup_folder_path"].(string),
-		request_data["backup_file_name"].(string))
+	err := obj.service.UpdateAutomaticBackup(request_data)
 
 	if err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
