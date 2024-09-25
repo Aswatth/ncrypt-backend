@@ -201,6 +201,27 @@ func (obj *SystemController) UpdatePasswordGeneratorPreference(ctx *gin.Context)
 	ctx.Status(http.StatusOK)
 }
 
+func (obj *SystemController) UpdateSessionDuration(ctx *gin.Context) {
+	request_data := make(map[string]interface{})
+
+	//Check if given JSON is valid
+	if err := ctx.ShouldBindJSON(&request_data); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		logger.Log.Printf("ERROR: %s", err.Error())
+		return
+	}
+
+	updated_token, err := obj.service.UpdateSessionDuration((int)(request_data["session_duration_in_minutes"].(float64)))
+
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		logger.Log.Printf("ERROR: %s", err.Error())
+		return
+	}
+
+	ctx.JSON(http.StatusOK, updated_token)
+}
+
 func (obj *SystemController) RegisterRoutes(rg *gin.RouterGroup) {
 	group := rg.Group("system")
 
@@ -214,6 +235,7 @@ func (obj *SystemController) RegisterRoutes(rg *gin.RouterGroup) {
 
 	group.GET("/password_generator_preference", obj.GetPasswordGeneratorPreference)
 	group.PUT("/password_generator_preference", obj.UpdatePasswordGeneratorPreference)
+	group.PUT("/session_duration", obj.UpdateSessionDuration)
 
 	group.GET("/data", obj.GetSystemData)
 	group.POST("/logout", obj.Logout)

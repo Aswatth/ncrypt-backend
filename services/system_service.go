@@ -21,10 +21,10 @@ import (
 )
 
 type SystemService struct {
-	database                database.IDatabase
-	database_name           string
-	master_password_service IMasterPasswordService
-	SESSION_TIME_IN_MINUTES int
+	database                    database.IDatabase
+	database_name               string
+	master_password_service     IMasterPasswordService
+	SESSION_DURATION_IN_MINUTES int
 }
 
 func (obj *SystemService) Init() {
@@ -41,7 +41,7 @@ func (obj *SystemService) Init() {
 	obj.master_password_service = InitBadgerMasterPasswordService()
 	obj.master_password_service.Init()
 
-	obj.SESSION_TIME_IN_MINUTES = 20
+	obj.SESSION_DURATION_IN_MINUTES = 20 //20 minutes is default
 	logger.Log.Printf("System service initialized")
 
 	_, err := obj.GetSystemData()
@@ -140,7 +140,7 @@ func (obj *SystemService) Setup(master_password string, automatic_backup bool, b
 	password_generator_preferance.HasSpecialChar = false
 	password_generator_preferance.Length = 8
 
-	err = obj.initSystem(models.SystemData{LoginCount: 0, LastLoginDateTime: "", CurrentLoginDateTime: "", IsLoggedIn: false, AutomaticBackup: true, AutomaticBackupLocation: backup_folder_path, BackupFileName: backup_file_name, SessionTimeInMinutes: obj.SESSION_TIME_IN_MINUTES, PasswordGeneratorPreference: *password_generator_preferance})
+	err = obj.initSystem(models.SystemData{LoginCount: 0, LastLoginDateTime: "", CurrentLoginDateTime: "", IsLoggedIn: false, AutomaticBackup: true, AutomaticBackupLocation: backup_folder_path, BackupFileName: backup_file_name, SessionDurationInMinutes: obj.SESSION_DURATION_IN_MINUTES, PasswordGeneratorPreference: *password_generator_preferance})
 	if err != nil {
 		logger.Log.Printf("ERROR: %s", err.Error())
 		return err
@@ -188,7 +188,7 @@ func (obj *SystemService) SignIn(password string) (string, error) {
 
 	logger.Log.Printf("Logged in")
 
-	token, err := jwt.GenerateToken()
+	token, err := jwt.GenerateToken(system_data.SessionDurationInMinutes)
 
 	if err != nil {
 		logger.Log.Printf("ERROR: %s", err.Error())
@@ -482,4 +482,22 @@ func (obj *SystemService) UpdatePasswordGeneratorPreference(data map[string]inte
 	}
 
 	return nil
+}
+
+func (obj *SystemService) UpdateSessionDuration(session_duration_in_minutes int) (string, error) {
+	system_data, err := obj.GetSystemData()
+
+	if err != nil {
+		return "", err
+	}
+
+	system_data.SessionDurationInMinutes = session_duration_in_minutes
+
+	err = obj.setSystemData(*system_data)
+
+	if err != nil {
+		return "", err
+	}
+
+	return jwt.GenerateToken(session_duration_in_minutes)
 }

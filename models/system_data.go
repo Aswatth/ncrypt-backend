@@ -8,7 +8,7 @@ type SystemData struct {
 	AutomaticBackup             bool                        `json:"automatic_backup" bson:"automatic_backup"`
 	AutomaticBackupLocation     string                      `json:"automatic_backup_location" bson:"automatic_backup_location"`
 	BackupFileName              string                      `json:"backup_file_name" bson:"backup_file_name"`
-	SessionTimeInMinutes        int                         `json:"session_time_in_minutes" bson:"session_time_in_minutes"`
+	SessionDurationInMinutes    int                         `json:"session_duration_in_minutes" bson:"session_duration_in_minutes"`
 	PasswordGeneratorPreference PasswordGeneratorPreference `json:"password_generator_preference" bson:"password_generator_preference"`
 }
 
@@ -20,7 +20,7 @@ func (obj *SystemData) FromMap(data map[string]interface{}) *SystemData {
 	obj.AutomaticBackup = data["automatic_backup"].(bool)
 	obj.AutomaticBackupLocation = data["automatic_backup_location"].(string)
 	obj.BackupFileName = data["backup_file_name"].(string)
-	obj.SessionTimeInMinutes = int(data["session_time_in_minutes"].(float64))
+	obj.SessionDurationInMinutes = int(data["session_duration_in_minutes"].(float64))
 	obj.PasswordGeneratorPreference = *new(PasswordGeneratorPreference).FromMap(data["password_generator_preference"].(map[string]interface{}))
 
 	return obj
