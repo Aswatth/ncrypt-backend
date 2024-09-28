@@ -501,3 +501,13 @@ func (obj *SystemService) UpdateSessionDuration(session_duration_in_minutes int)
 
 	return jwt.GenerateToken(session_duration_in_minutes)
 }
+
+func (obj *SystemService) ExtendSession() (string, error) {
+	system_data, err := obj.GetSystemData()
+
+	if err != nil {
+		return "", err
+	}
+
+	return jwt.GenerateToken(system_data.SessionDurationInMinutes)
+}

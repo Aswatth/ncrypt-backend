@@ -40,7 +40,7 @@ func (obj *SystemController) Setup(ctx *gin.Context) {
 	}
 
 	err := obj.service.Setup(request_data["master_password"].(string),
-		request_data["auto_backup_setting"].(map[string]interface{}),)
+		request_data["auto_backup_setting"].(map[string]interface{}))
 
 	if err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
@@ -217,6 +217,18 @@ func (obj *SystemController) UpdateSessionDuration(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, updated_token)
 }
 
+func (obj *SystemController) ExtendSession(ctx *gin.Context) {
+	new_token, err := obj.service.ExtendSession()
+
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		logger.Log.Printf("ERROR: %s", err.Error())
+		return
+	}
+
+	ctx.JSON(http.StatusOK, new_token)
+}
+
 func (obj *SystemController) RegisterRoutes(rg *gin.RouterGroup) {
 	group := rg.Group("system")
 
@@ -231,6 +243,7 @@ func (obj *SystemController) RegisterRoutes(rg *gin.RouterGroup) {
 	group.GET("/password_generator_preference", obj.GetPasswordGeneratorPreference)
 	group.PUT("/password_generator_preference", obj.UpdatePasswordGeneratorPreference)
 	group.PUT("/session_duration", obj.UpdateSessionDuration)
+	group.GET("/session_duration", obj.ExtendSession)
 
 	group.GET("/data", obj.GetSystemData)
 	group.POST("/logout", obj.Logout)
