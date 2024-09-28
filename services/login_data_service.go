@@ -178,11 +178,11 @@ func (obj *LoginDataService) AddLoginData(login_data *models.Login) error {
 	return err
 }
 
-func (obj *LoginDataService) UpdateLoginData(login_data_name string, login_data *models.Login) error {
+func (obj *LoginDataService) UpdateLoginData(old_login_data_name string, login_data *models.Login) error {
 	logger.Log.Printf("Updating login data")
 
 	logger.Log.Printf("Checking for name conflicts")
-	if login_data_name != login_data.Name {
+	if old_login_data_name != login_data.Name {
 		existing_data, err := obj.GetLoginData(login_data.Name)
 
 		if err != nil && err != badger.ErrKeyNotFound {
@@ -195,7 +195,7 @@ func (obj *LoginDataService) UpdateLoginData(login_data_name string, login_data 
 			return err
 		}
 
-		err = obj.DeleteLoginData(login_data_name)
+		err = obj.DeleteLoginData(old_login_data_name)
 
 		if err != nil {
 			logger.Log.Printf("ERROR: %s", err.Error())
@@ -215,7 +215,7 @@ func (obj *LoginDataService) UpdateLoginData(login_data_name string, login_data 
 	}
 
 	for index := range len(login_data.Accounts) {
-		decrypted_data, err := encryptor.Decrypt(login_data.Accounts[index].Password, key+login_data.Name+login_data.Accounts[index].Username)
+		decrypted_data, err := encryptor.Decrypt(login_data.Accounts[index].Password, key+old_login_data_name+login_data.Accounts[index].Username)
 
 		// login_data.Accounts[index].Password = decrypted_data
 		if err == nil {
