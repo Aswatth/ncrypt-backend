@@ -244,7 +244,7 @@ func (obj *LoginDataService) DeleteLoginData(login_data_name string) error {
 	return err
 }
 
-func (obj *LoginDataService) recryptData(old_password string) error {
+func (obj *LoginDataService) recryptData(password_data map[string]string) error {
 	logger.Log.Printf("Re-crpyting login data")
 
 	//Get all login data
@@ -256,6 +256,9 @@ func (obj *LoginDataService) recryptData(old_password string) error {
 	}
 
 	//Decrypt all login data
+	old_password := password_data["OLD_PASSWORD"]
+	new_password := password_data["NEW_PASSWORD"]
+
 	for i := range len(login_list) {
 		for j := range len(login_list[i].Accounts) {
 			login_list[i].Accounts[j].Password, err = encryptor.Decrypt(login_list[i].Accounts[j].Password, old_password+login_list[i].Name+login_list[i].Accounts[j].Username)
@@ -267,12 +270,16 @@ func (obj *LoginDataService) recryptData(old_password string) error {
 	}
 
 	//Save updated data
-	for _, login_data := range login_list {
-		err = obj.setLoginData(&login_data) // Automatically encrypts data
+	for i := range len(login_list) {
+		for j := range len(login_list[i].Accounts) {
+			login_list[i].Accounts[j].Password, err = encryptor.Encrypt(login_list[i].Accounts[j].Password, new_password+login_list[i].Name+login_list[i].Accounts[j].Username)
 
-		if err != nil {
-			logger.Log.Printf("ERROR: %s", err.Error())
-			return err
+			if err != nil {
+				logger.Log.Printf("ERROR: %s", err.Error())
+				return err
+			}
+
+			obj.database.AddData(login_list[i].Name, login_list[i])
 		}
 	}
 

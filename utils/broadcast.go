@@ -4,10 +4,10 @@ import "sync"
 
 type Event struct {
 	Type string
-	Data string
+	Data map[string]string
 }
 
-type EventHandler func(data string) error
+type EventHandler func(data map[string]string) error
 
 type Broadcast struct {
 	mutex_lock sync.RWMutex
@@ -32,7 +32,7 @@ func (b *Broadcast) Publish(event Event) {
 		var wg sync.WaitGroup
 		for _, handler := range handlers {
 			wg.Add(1)
-			go func(h EventHandler, data string) {
+			go func(h EventHandler, data map[string]string) {
 				defer wg.Done()
 				h(data)
 			}(handler, event.Data)

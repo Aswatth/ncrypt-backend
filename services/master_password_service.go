@@ -92,9 +92,14 @@ func (obj *MasterPasswordService) UpdateMasterPassword(old_master_password strin
 	broadcast.Subscribe("UPDATE_MASTER_PASSWORD", login_service.recryptData)
 
 	logger.Log.Printf("Creating event")
+
+	data_map := make(map[string]string)
+	data_map["OLD_PASSWORD"] = stored_master_password_hash
+	data_map["NEW_PASSWORD"] = new_master_password_hash
+	
 	event_data := utils.Event{
 		Type: "UPDATE_MASTER_PASSWORD",
-		Data: stored_master_password_hash,
+		Data: data_map,
 	}
 
 	logger.Log.Printf("Broadcasting event")
