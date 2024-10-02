@@ -204,11 +204,8 @@ func (obj *LoginDataService) UpdateLoginData(old_login_data_name string, login_d
 	}
 
 	logger.Log.Printf("Decrypting data")
-	//Decrypt data
-	master_password_service := new(MasterPasswordService)
-	master_password_service.Init()
 
-	key, err := master_password_service.GetMasterPassword()
+	key, err := obj.master_password_service.GetMasterPassword()
 
 	if err != nil {
 		logger.Log.Printf("ERROR: %s", err.Error())
