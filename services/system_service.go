@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/dgraph-io/badger/v4"
@@ -232,13 +233,7 @@ func (obj *SystemService) Export(file_name string, file_path string) error {
 		return errors.New("incorrect file format")
 	}
 
-	//Get system data
-	system_data, err := obj.GetSystemData()
-
-	if err != nil {
-		logger.Log.Printf("ERROR: %s", err.Error())
-		return err
-	}
+	export_data := new(ExportData)
 
 	logger.Log.Println("Fetching master password")
 	//Get master password data
@@ -247,24 +242,68 @@ func (obj *SystemService) Export(file_name string, file_path string) error {
 	if err != nil {
 		logger.Log.Printf("ERROR: %s", err.Error())
 		return err
+	} else {
+		export_data.MASTER_PASSWORD = master_password
 	}
 
-	logger.Log.Println("Fetching login data")
-	//Get login data
-	login_service := InitBadgerLoginService()
-	login_service.Init()
-	login_data_list, err := login_service.GetAllLoginData()
+	system_data, err := obj.GetSystemData()
 
 	if err != nil {
 		logger.Log.Printf("ERROR: %s", err.Error())
 		return err
+	} else {
+		export_data.SYSTEM_DATA = *system_data
 	}
 
-	export_data := new(ExportData)
+	var wg sync.WaitGroup
+	err_channel := make(chan error)
 
-	export_data.SYSTEM_DATA = *system_data
-	export_data.LOGIN_DATA = login_data_list
-	export_data.MASTER_PASSWORD = master_password
+	wg.Add(1)
+	go func() error {
+		defer wg.Done()
+		logger.Log.Println("Fetching login data")
+		//Get login data
+		login_service := InitBadgerLoginService()
+		login_service.Init()
+		login_data_list, err := login_service.GetAllLoginData()
+
+		if err != nil {
+			logger.Log.Printf("ERROR: %s", err.Error())
+			err_channel <- err
+			return err
+		} else {
+			export_data.LOGIN_DATA = login_data_list
+			return nil
+		}
+	}()
+
+	wg.Add(1)
+	go func() error {
+		defer wg.Done()
+		//Get note data
+		note_service := InitBadgerNoteService()
+		note_service.Init()
+		notes, err := note_service.GetAllNotes()
+
+		if err != nil {
+			logger.Log.Printf("ERROR: %s", err.Error())
+			err_channel <- err
+			return err
+		} else {
+			export_data.NOTE_DATA = notes
+			return nil
+		}
+	}()
+
+	go func() {
+		wg.Wait()
+		close(err_channel)
+	}()
+
+	for err := range err_channel {
+		logger.Log.Fatal(err.Error())
+		return err
+	}
 
 	logger.Log.Println("Exporting to " + file_path + "\\" + file_name)
 	var path string
@@ -382,6 +421,7 @@ func (obj *SystemService) Import(file_name string, file_path string, master_pass
 type ExportData struct {
 	SYSTEM_DATA     models.SystemData `json:"SYSTEM" bson:"SYSTEM"`
 	LOGIN_DATA      []models.Login    `json:"LOGIN_DATA" bson:"LOGIN_DATA"`
+	NOTE_DATA       []models.Note     `json:"NOTE_DATA" bson:"NOTE_DATA"`
 	MASTER_PASSWORD string            `json:"MASTER_PASSWORD" bson:"MASTER_PASSWORD"`
 }
 
