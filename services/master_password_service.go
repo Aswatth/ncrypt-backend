@@ -91,6 +91,11 @@ func (obj *MasterPasswordService) UpdateMasterPassword(old_master_password strin
 	login_service.Init()
 	broadcast.Subscribe("UPDATE_MASTER_PASSWORD", login_service.recryptData)
 
+	logger.Log.Printf("Subscribing note service to listen for changes")
+	note_service := InitBadgerNoteService()
+	note_service.Init()
+	broadcast.Subscribe("UPDATE_MASTER_PASSWORD", note_service.recryptData)
+
 	logger.Log.Printf("Creating event")
 
 	data_map := make(map[string]string)
