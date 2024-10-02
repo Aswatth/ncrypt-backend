@@ -414,6 +414,16 @@ func (obj *SystemService) Import(file_name string, file_path string, master_pass
 		return err
 	}
 
+	//Import note data
+	logger.Log.Println("Importing note data")
+	note_service := InitBadgerNoteService()
+	note_service.Init()
+	err = note_service.importData(imported_data.NOTE_DATA)
+	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
+		return err
+	}
+
 	logger.Log.Println("DONE")
 	return nil
 }
