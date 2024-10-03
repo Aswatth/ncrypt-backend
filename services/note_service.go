@@ -182,24 +182,10 @@ func (obj *NoteService) recryptData(password_data map[string]string) error {
 
 func (obj *NoteService) importData(notes []models.Note) error {
 	logger.Log.Printf("Importing notes")
-	logger.Log.Printf("Deleting previous data")
 	os.RemoveAll("data/" + os.Getenv("NOTE_DB_NAME"))
 
-	logger.Log.Printf("Saving imported notes")
-
-	master_password, err := obj.master_password_service.GetMasterPassword()
-	if err != nil {
-		logger.Log.Printf("ERROR: " + err.Error())
-		return err
-	}
-
 	for _, note := range notes {
-		note.Content, err = encryptor.Decrypt(note.Content, master_password+note.CreatedDateTime)
-		if err != nil {
-			logger.Log.Printf("ERROR: " + err.Error())
-			return err
-		}
-		err := obj.AddNote(&note)
+		err := obj.database.AddData(note.CreatedDateTime, note)
 		if err != nil {
 			logger.Log.Printf("ERROR: " + err.Error())
 			return err
