@@ -404,25 +404,41 @@ func (obj *SystemService) Import(file_name string, file_path string, master_pass
 		return err
 	}
 
-	//Import login data
-	logger.Log.Println("Importing login data")
-	login_service := InitBadgerLoginService()
-	login_service.Init()
-	err = login_service.importData(imported_data.LOGIN_DATA)
-	if err != nil {
-		logger.Log.Printf("ERROR: %s", err.Error())
-		return err
-	}
+	var wg sync.WaitGroup
+	err_channel := make(chan error)
 
-	//Import note data
-	logger.Log.Println("Importing note data")
-	note_service := InitBadgerNoteService()
-	note_service.Init()
-	err = note_service.importData(imported_data.NOTE_DATA)
-	if err != nil {
-		logger.Log.Printf("ERROR: %s", err.Error())
-		return err
-	}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		//Import login data
+		logger.Log.Println("Importing login data")
+		login_service := InitBadgerLoginService()
+		login_service.Init()
+		err = login_service.importData(imported_data.LOGIN_DATA)
+		if err != nil {
+			logger.Log.Printf("ERROR: %s", err.Error())
+			err_channel <- err
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		//Import note data
+		logger.Log.Println("Importing note data")
+		note_service := InitBadgerNoteService()
+		note_service.Init()
+		err = note_service.importData(imported_data.NOTE_DATA)
+		if err != nil {
+			logger.Log.Printf("ERROR: %s", err.Error())
+			err_channel <- err
+		}
+	}()
+
+	go func() {
+		wg.Wait()
+		close(err_channel)
+	}()
 
 	logger.Log.Println("DONE")
 	return nil
