@@ -183,7 +183,7 @@ func (obj *NoteService) recryptData(password_data map[string]string) error {
 func (obj *NoteService) importData(notes []models.Note) error {
 	logger.Log.Printf("Importing notes")
 	logger.Log.Printf("Deleting previous data")
-	os.RemoveAll("../data/" + os.Getenv("NOTE_DB_NAME"))
+	os.RemoveAll("data/" + os.Getenv("NOTE_DB_NAME"))
 
 	logger.Log.Printf("Saving imported notes")
 

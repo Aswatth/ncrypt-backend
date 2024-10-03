@@ -286,6 +286,8 @@ func (obj *LoginDataService) recryptData(password_data map[string]string) error 
 
 func (obj *LoginDataService) importData(login_data_list []models.Login) error {
 
+	os.RemoveAll("data/" + os.Getenv("LOGIN_DB_NAME"))
+
 	for _, login_data := range login_data_list {
 		err := obj.database.AddData(strings.ToUpper(login_data.Name), login_data)
 
