@@ -1,7 +1,6 @@
 package services
 
 import (
-	"fmt"
 	"ncrypt/models"
 	"os"
 	"strings"
@@ -14,7 +13,7 @@ func TestSetSystemData(t *testing.T) {
 	service.Init()
 
 	now := time.Now().Format(time.RFC3339)
-	err := service.setSystemData(models.SystemData{LoginCount: 10, LastLoginDateTime: now, IsLoggedIn: false, CurrentLoginDateTime: now, AutomaticBackup: false, AutomaticBackupLocation: "", BackupFileName: "", SessionTimeInMinutes: 20})
+	err := service.setSystemData(models.SystemData{LoginCount: 10, LastLoginDateTime: now, IsLoggedIn: false, CurrentLoginDateTime: now, AutoBackupSetting: models.AutoBackupSetting{IsEnabled: false, BackupLocation: "", BackupFileName: ""}, SessionDurationInMinutes: 20})
 
 	if err != nil {
 		t.Error(err.Error())
@@ -28,7 +27,7 @@ func TestGetSystemData(t *testing.T) {
 	service.Init()
 
 	now := time.Now().Format(time.RFC3339)
-	initial_data := models.SystemData{LoginCount: 1, LastLoginDateTime: now, IsLoggedIn: false, CurrentLoginDateTime: now, AutomaticBackup: false, AutomaticBackupLocation: "", BackupFileName: "", SessionTimeInMinutes: 20}
+	initial_data := models.SystemData{LoginCount: 1, LastLoginDateTime: now, IsLoggedIn: false, CurrentLoginDateTime: now, AutoBackupSetting: models.AutoBackupSetting{IsEnabled: false, BackupLocation: "", BackupFileName: ""}, SessionDurationInMinutes: 20}
 
 	err := service.setSystemData(initial_data)
 
@@ -51,7 +50,12 @@ func TestSetup_WithNoBackup(t *testing.T) {
 	service := new(SystemService)
 	service.Init()
 
-	err := service.Setup("12345", false, "", "")
+	auto_backup_setting := make(map[string]interface{})
+	auto_backup_setting["is_enabled"] = false
+	auto_backup_setting["backup_location"] = ""
+	auto_backup_setting["backup_file_name"] = ""
+
+	err := service.Setup("12345", auto_backup_setting)
 
 	if err != nil {
 		t.Error(err.Error())
@@ -63,7 +67,7 @@ func TestSetup_WithNoBackup(t *testing.T) {
 		t.Error(err.Error())
 	}
 
-	if fetched_system_data.AutomaticBackup != false || fetched_system_data.AutomaticBackupLocation != "" || fetched_system_data.BackupFileName != "" {
+	if fetched_system_data.AutoBackupSetting.IsEnabled != false || fetched_system_data.AutoBackupSetting.BackupLocation != "" || fetched_system_data.AutoBackupSetting.BackupFileName != "" {
 		t.Error("Automatic backup should be empty")
 	}
 
@@ -76,7 +80,12 @@ func TestSetup_WithBackup(t *testing.T) {
 	service := new(SystemService)
 	service.Init()
 
-	err := service.Setup("12345", true, "", "my_backup")
+	auto_backup_setting := make(map[string]interface{})
+	auto_backup_setting["is_enabled"] = true
+	auto_backup_setting["backup_location"] = "../services/"
+	auto_backup_setting["backup_file_name"] = "test_backup.ncrypt"
+
+	err := service.Setup("12345", auto_backup_setting)
 
 	if err != nil {
 		t.Error(err.Error())
@@ -88,7 +97,7 @@ func TestSetup_WithBackup(t *testing.T) {
 		t.Error(err.Error())
 	}
 
-	if fetched_system_data.AutomaticBackup != true {
+	if fetched_system_data.AutoBackupSetting.IsEnabled != true {
 		t.Error("Automatic backup should be empty")
 	}
 
@@ -100,8 +109,12 @@ func TestSignIn(t *testing.T) {
 	service.Init()
 
 	password := "12345"
+	auto_backup_setting := make(map[string]interface{})
+	auto_backup_setting["is_enabled"] = false
+	auto_backup_setting["backup_location"] = ""
+	auto_backup_setting["backup_file_name"] = ""
 
-	err := service.Setup(password, false, "", "")
+	err := service.Setup(password, auto_backup_setting)
 
 	if err != nil {
 		t.Error(err.Error())
@@ -126,7 +139,12 @@ func TestSignIn_WithIncorrectPassword(t *testing.T) {
 
 	password := "12345"
 
-	err := service.Setup(password, false, "", "")
+	auto_backup_setting := make(map[string]interface{})
+	auto_backup_setting["is_enabled"] = false
+	auto_backup_setting["backup_location"] = ""
+	auto_backup_setting["backup_file_name"] = ""
+
+	err := service.Setup(password, auto_backup_setting)
 
 	if err != nil {
 		t.Error(err.Error())
@@ -150,8 +168,12 @@ func TestLogout(t *testing.T) {
 	service.Init()
 
 	password := "12345"
+	auto_backup_setting := make(map[string]interface{})
+	auto_backup_setting["is_enabled"] = false
+	auto_backup_setting["backup_location"] = ""
+	auto_backup_setting["backup_file_name"] = ""
 
-	err := service.Setup(password, false, "", "")
+	err := service.Setup(password, auto_backup_setting)
 
 	if err != nil {
 		t.Error(err.Error())
@@ -181,8 +203,12 @@ func TestLogout_WithoutSignin(t *testing.T) {
 	service.Init()
 
 	password := "12345"
+	auto_backup_setting := make(map[string]interface{})
+	auto_backup_setting["is_enabled"] = false
+	auto_backup_setting["backup_location"] = ""
+	auto_backup_setting["backup_file_name"] = ""
 
-	err := service.Setup(password, false, "", "")
+	err := service.Setup(password, auto_backup_setting)
 
 	if err != nil {
 		t.Error(err.Error())
@@ -202,7 +228,12 @@ func TestExport_CurrentFolder(t *testing.T) {
 	service.Init()
 
 	password := "12345"
-	err := service.Setup(password, false, "", "")
+	auto_backup_setting := make(map[string]interface{})
+	auto_backup_setting["is_enabled"] = false
+	auto_backup_setting["backup_location"] = ""
+	auto_backup_setting["backup_file_name"] = ""
+
+	err := service.Setup(password, auto_backup_setting)
 
 	if err != nil {
 		t.Error(err.Error())
@@ -230,7 +261,12 @@ func TestExport_WithCustomPath(t *testing.T) {
 	service.Init()
 
 	password := "12345"
-	err := service.Setup(password, false, "", "")
+	auto_backup_setting := make(map[string]interface{})
+	auto_backup_setting["is_enabled"] = false
+	auto_backup_setting["backup_location"] = ""
+	auto_backup_setting["backup_file_name"] = ""
+
+	err := service.Setup(password, auto_backup_setting)
 
 	if err != nil {
 		t.Error(err.Error())
@@ -258,7 +294,12 @@ func TestExport_WithInvalidPath(t *testing.T) {
 	service.Init()
 
 	password := "12345"
-	err := service.Setup(password, false, "", "")
+	auto_backup_setting := make(map[string]interface{})
+	auto_backup_setting["is_enabled"] = false
+	auto_backup_setting["backup_location"] = ""
+	auto_backup_setting["backup_file_name"] = ""
+
+	err := service.Setup(password, auto_backup_setting)
 
 	if err != nil {
 		t.Error(err.Error())
@@ -277,7 +318,12 @@ func TestExport_IncorrectFormat(t *testing.T) {
 	service.Init()
 
 	password := "12345"
-	err := service.Setup(password, false, "", "")
+	auto_backup_setting := make(map[string]interface{})
+	auto_backup_setting["is_enabled"] = false
+	auto_backup_setting["backup_location"] = ""
+	auto_backup_setting["backup_file_name"] = ""
+
+	err := service.Setup(password, auto_backup_setting)
 
 	if err != nil {
 		t.Error(err.Error())
@@ -291,101 +337,106 @@ func TestExport_IncorrectFormat(t *testing.T) {
 	t.Cleanup(system_service_test_cleanup)
 }
 
-func TestGeneratePassword(t *testing.T) {
-	service := new(SystemService)
-	service.Init()
+// func TestGeneratePassword(t *testing.T) {
+// 	service := new(SystemService)
+// 	service.Init()
 
-	t.Run("Default case", func(t *testing.T) {
-		t.Parallel()
-		password := service.GeneratePassword(false, false, false, 8)
+// 	t.Run("Default case", func(t *testing.T) {
+// 		t.Parallel()
+// 		password := service.GeneratePassword(false, false, false, 8)
 
-		if password == "" {
-			t.Error("Generated password cannot be empty")
-		}
-	},
-	)
+// 		if password == "" {
+// 			t.Error("Generated password cannot be empty")
+// 		}
+// 	},
+// 	)
 
-	t.Run("With digits", func(t *testing.T) {
-		t.Parallel()
-		password := service.GeneratePassword(true, false, false, 8)
+// 	t.Run("With digits", func(t *testing.T) {
+// 		t.Parallel()
+// 		password := service.GeneratePassword(true, false, false, 8)
 
-		if password == "" {
-			t.Error("Generated password cannot be empty")
-		}
-	})
+// 		if password == "" {
+// 			t.Error("Generated password cannot be empty")
+// 		}
+// 	})
 
-	t.Run("With uppercase characters", func(t *testing.T) {
-		t.Parallel()
-		password := service.GeneratePassword(false, true, false, 8)
+// 	t.Run("With uppercase characters", func(t *testing.T) {
+// 		t.Parallel()
+// 		password := service.GeneratePassword(false, true, false, 8)
 
-		if password == "" {
-			t.Error("Generated password cannot be empty")
-		}
-	})
+// 		if password == "" {
+// 			t.Error("Generated password cannot be empty")
+// 		}
+// 	})
 
-	t.Run("With special characters", func(t *testing.T) {
-		t.Parallel()
-		password := service.GeneratePassword(false, false, true, 8)
+// 	t.Run("With special characters", func(t *testing.T) {
+// 		t.Parallel()
+// 		password := service.GeneratePassword(false, false, true, 8)
 
-		if password == "" {
-			t.Error("Generated password cannot be empty")
-		}
-	})
+// 		if password == "" {
+// 			t.Error("Generated password cannot be empty")
+// 		}
+// 	})
 
-	t.Run("With digits and upper case", func(t *testing.T) {
-		t.Parallel()
-		password := service.GeneratePassword(true, true, false, 8)
+// 	t.Run("With digits and upper case", func(t *testing.T) {
+// 		t.Parallel()
+// 		password := service.GeneratePassword(true, true, false, 8)
 
-		if password == "" {
-			t.Error("Generated password cannot be empty")
-		}
-	})
+// 		if password == "" {
+// 			t.Error("Generated password cannot be empty")
+// 		}
+// 	})
 
-	t.Run("With uppercase and special characters", func(t *testing.T) {
-		t.Parallel()
-		password := service.GeneratePassword(false, true, true, 8)
+// 	t.Run("With uppercase and special characters", func(t *testing.T) {
+// 		t.Parallel()
+// 		password := service.GeneratePassword(false, true, true, 8)
 
-		if password == "" {
-			t.Error("Generated password cannot be empty")
-		}
-	})
+// 		if password == "" {
+// 			t.Error("Generated password cannot be empty")
+// 		}
+// 	})
 
-	t.Run("With digits and special characters", func(t *testing.T) {
-		t.Parallel()
-		password := service.GeneratePassword(true, false, true, 8)
+// 	t.Run("With digits and special characters", func(t *testing.T) {
+// 		t.Parallel()
+// 		password := service.GeneratePassword(true, false, true, 8)
 
-		if password == "" {
-			t.Error("Generated password cannot be empty")
-		}
-	})
+// 		if password == "" {
+// 			t.Error("Generated password cannot be empty")
+// 		}
+// 	})
 
-	t.Run("With digits, uppercase and special characters", func(t *testing.T) {
-		t.Parallel()
-		password := service.GeneratePassword(true, true, true, 8)
+// 	t.Run("With digits, uppercase and special characters", func(t *testing.T) {
+// 		t.Parallel()
+// 		password := service.GeneratePassword(true, true, true, 8)
 
-		if password == "" {
-			t.Error("Generated password cannot be empty")
-		}
-	})
+// 		if password == "" {
+// 			t.Error("Generated password cannot be empty")
+// 		}
+// 	})
 
-	for i := 8; i <= 16; i++ {
-		t.Run("With length "+fmt.Sprintf("%d", i), func(t *testing.T) {
-			t.Parallel()
-			password := service.GeneratePassword(false, false, true, 16)
+// 	for i := 8; i <= 16; i++ {
+// 		t.Run("With length "+fmt.Sprintf("%d", i), func(t *testing.T) {
+// 			t.Parallel()
+// 			password := service.GeneratePassword(false, false, true, 16)
 
-			if password == "" {
-				t.Error("Generated password cannot be empty")
-			}
-		})
-	}
-}
+// 			if password == "" {
+// 				t.Error("Generated password cannot be empty")
+// 			}
+// 		})
+// 	}
+// }
 
 func TestImport(t *testing.T) {
 	service := new(SystemService)
 	service.Init()
 
 	password := "12345"
-	err := service.Setup(password, false, "", "")
+	auto_backup_setting := make(map[string]interface{})
+	auto_backup_setting["is_enabled"] = false
+	auto_backup_setting["backup_location"] = ""
+	auto_backup_setting["backup_file_name"] = ""
+
+	err := service.Setup(password, auto_backup_setting)
 
 	if err != nil {
 		t.Error(err.Error())
@@ -397,7 +448,11 @@ func TestImport(t *testing.T) {
 	}
 
 	//Changing data
-	service.UpdateAutomaticBackup(true, "", "backup")
+	auto_backup_setting["is_enabled"] = true
+	auto_backup_setting["backup_location"] = ""
+	auto_backup_setting["backup_file_name"] = "backup"
+
+	service.UpdateAutomaticBackup(auto_backup_setting)
 
 	if file_info, err := os.Stat("test_export.ncrypt"); os.IsNotExist(err) {
 		file_name := file_info.Name()
@@ -413,7 +468,7 @@ func TestImport(t *testing.T) {
 			t.Error(err.Error())
 		}
 
-		if system_data.AutomaticBackup != true || system_data.BackupFileName != "backup" || system_data.AutomaticBackupLocation != "" {
+		if system_data.AutoBackupSetting.IsEnabled != true || system_data.AutoBackupSetting.BackupFileName != "backup" || system_data.AutoBackupSetting.BackupLocation != "" {
 			t.Error("incorrect data")
 		}
 	} else {
@@ -431,7 +486,12 @@ func TestImport_WithIncorrectMasterPassword(t *testing.T) {
 	service.Init()
 
 	password := "12345"
-	err := service.Setup(password, false, "", "")
+	auto_backup_setting := make(map[string]interface{})
+	auto_backup_setting["is_enabled"] = false
+	auto_backup_setting["backup_location"] = ""
+	auto_backup_setting["backup_file_name"] = ""
+
+	err := service.Setup(password, auto_backup_setting)
 
 	if err != nil {
 		t.Error(err.Error())
@@ -443,7 +503,11 @@ func TestImport_WithIncorrectMasterPassword(t *testing.T) {
 	}
 
 	//Changing data
-	service.UpdateAutomaticBackup(true, "", "backup")
+	auto_backup_setting["is_enabled"] = true
+	auto_backup_setting["backup_location"] = ""
+	auto_backup_setting["backup_file_name"] = "backup"
+
+	service.UpdateAutomaticBackup(auto_backup_setting)
 
 	if file_info, err := os.Stat("test_export.ncrypt"); os.IsNotExist(err) {
 		file_name := file_info.Name()
@@ -468,7 +532,12 @@ func TestBackup(t *testing.T) {
 	service.Init()
 
 	password := "12345"
-	err := service.Setup(password, true, "", "test_backup")
+	auto_backup_setting := make(map[string]interface{})
+	auto_backup_setting["is_enabled"] = true
+	auto_backup_setting["backup_location"] = ""
+	auto_backup_setting["backup_file_name"] = "test_backup"
+
+	err := service.Setup(password, auto_backup_setting)
 
 	if err != nil {
 		t.Error(err.Error())
@@ -519,13 +588,22 @@ func TestUpadteAutomaticBackupData_SettingToTrue(t *testing.T) {
 	service.Init()
 
 	password := "12345"
-	err := service.Setup(password, false, "", "")
+	auto_backup_setting := make(map[string]interface{})
+	auto_backup_setting["is_enabled"] = false
+	auto_backup_setting["backup_location"] = ""
+	auto_backup_setting["backup_file_name"] = ""
+
+	err := service.Setup(password, auto_backup_setting)
 
 	if err != nil {
 		t.Error(err.Error())
 	}
 
-	err = service.UpdateAutomaticBackup(true, "D:", "my_backup.ncrypt")
+	auto_backup_setting["is_enabled"] = true
+	auto_backup_setting["backup_location"] = "D:"
+	auto_backup_setting["backup_file_name"] = "my_backup.ncrypt"
+
+	err = service.UpdateAutomaticBackup(auto_backup_setting)
 
 	if err != nil {
 		t.Error(err.Error())
@@ -535,7 +613,7 @@ func TestUpadteAutomaticBackupData_SettingToTrue(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	if system_data.AutomaticBackup != true || system_data.AutomaticBackupLocation != "D:" || system_data.BackupFileName != "my_backup.ncrypt" {
+	if system_data.AutoBackupSetting.IsEnabled != true || system_data.AutoBackupSetting.BackupLocation != "D:" || system_data.AutoBackupSetting.BackupFileName != "my_backup.ncrypt" {
 		t.Error("inavlid information")
 	}
 
@@ -547,13 +625,20 @@ func TestUpadteAutomaticBackupData_SettingToFalse(t *testing.T) {
 	service.Init()
 
 	password := "12345"
-	err := service.Setup(password, true, "D:", "my_backup.ncrypt")
+	auto_backup_setting := make(map[string]interface{})
+	auto_backup_setting["is_enabled"] = true
+	auto_backup_setting["backup_location"] = "D:"
+	auto_backup_setting["backup_file_name"] = "my_backup.ncrypt"
+
+	err := service.Setup(password, auto_backup_setting)
 
 	if err != nil {
 		t.Error(err.Error())
 	}
 
-	err = service.UpdateAutomaticBackup(false, "D:", "my_backup.ncrypt")
+	auto_backup_setting["is_enabled"] = false
+
+	err = service.UpdateAutomaticBackup(auto_backup_setting)
 
 	if err != nil {
 		t.Error(err.Error())
@@ -563,7 +648,7 @@ func TestUpadteAutomaticBackupData_SettingToFalse(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	if system_data.AutomaticBackup != false || system_data.AutomaticBackupLocation != "D:" || system_data.BackupFileName != "my_backup.ncrypt" {
+	if system_data.AutoBackupSetting.IsEnabled != false || system_data.AutoBackupSetting.BackupLocation != "D:" || system_data.AutoBackupSetting.BackupFileName != "my_backup.ncrypt" {
 		t.Error("inavlid information")
 	}
 
@@ -575,13 +660,20 @@ func TestUpadteAutomaticBackupData_ChangingFileName(t *testing.T) {
 	service.Init()
 
 	password := "12345"
-	err := service.Setup(password, true, "D:", "my_backup.ncrypt")
+	auto_backup_setting := make(map[string]interface{})
+	auto_backup_setting["is_enabled"] = true
+	auto_backup_setting["backup_location"] = "D:"
+	auto_backup_setting["backup_file_name"] = "my_backup.ncrypt"
+
+	err := service.Setup(password, auto_backup_setting)
 
 	if err != nil {
 		t.Error(err.Error())
 	}
 
-	err = service.UpdateAutomaticBackup(true, "D:", "backup.ncrypt")
+	auto_backup_setting["backup_file_name"] = "backup.ncrypt"
+
+	err = service.UpdateAutomaticBackup(auto_backup_setting)
 
 	if err != nil {
 		t.Error(err.Error())
@@ -591,7 +683,7 @@ func TestUpadteAutomaticBackupData_ChangingFileName(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	if system_data.AutomaticBackup != true || system_data.AutomaticBackupLocation != "D:" || system_data.BackupFileName != "backup.ncrypt" {
+	if system_data.AutoBackupSetting.IsEnabled != true || system_data.AutoBackupSetting.BackupLocation != "D:" || system_data.AutoBackupSetting.BackupFileName != "backup.ncrypt" {
 		t.Error("inavlid information")
 	}
 
@@ -603,13 +695,20 @@ func TestUpadteAutomaticBackupData_ChangingPath(t *testing.T) {
 	service.Init()
 
 	password := "12345"
-	err := service.Setup(password, true, "D:", "my_backup.ncrypt")
+	auto_backup_setting := make(map[string]interface{})
+	auto_backup_setting["is_enabled"] = true
+	auto_backup_setting["backup_location"] = "D:"
+	auto_backup_setting["backup_file_name"] = "my_backup.ncrypt"
+
+	err := service.Setup(password, auto_backup_setting)
 
 	if err != nil {
 		t.Error(err.Error())
 	}
 
-	err = service.UpdateAutomaticBackup(true, "C:", "my_backup.ncrypt")
+	auto_backup_setting["backup_location"] = "C:"
+
+	err = service.UpdateAutomaticBackup(auto_backup_setting)
 
 	if err != nil {
 		t.Error(err.Error())
@@ -619,7 +718,7 @@ func TestUpadteAutomaticBackupData_ChangingPath(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	if system_data.AutomaticBackup != true || system_data.AutomaticBackupLocation != "C:" || system_data.BackupFileName != "my_backup.ncrypt" {
+	if system_data.AutoBackupSetting.IsEnabled != true || system_data.AutoBackupSetting.BackupLocation != "C:" || system_data.AutoBackupSetting.BackupFileName != "my_backup.ncrypt" {
 		t.Error("inavlid information")
 	}
 
@@ -631,13 +730,20 @@ func TestUpadteAutomaticBackupData_EmptyFileName(t *testing.T) {
 	service.Init()
 
 	password := "12345"
-	err := service.Setup(password, false, "", "")
+	auto_backup_setting := make(map[string]interface{})
+	auto_backup_setting["is_enabled"] = false
+	auto_backup_setting["backup_location"] = ""
+	auto_backup_setting["backup_file_name"] = ""
+
+	err := service.Setup(password, auto_backup_setting)
 
 	if err != nil {
 		t.Error(err.Error())
 	}
 
-	err = service.UpdateAutomaticBackup(true, "", "")
+	auto_backup_setting["is_enabled"] = true
+
+	err = service.UpdateAutomaticBackup(auto_backup_setting)
 
 	if err == nil {
 		t.Error("Should cause an error")

@@ -33,7 +33,7 @@ func TestUpdateMasterPassword(t *testing.T) {
 		t.Error(err.Error())
 	}
 
-	err = service.UpdateMasterPassword("123")
+	err = service.UpdateMasterPassword("12345", "123")
 
 	if err != nil {
 		t.Error(err.Error())
@@ -147,7 +147,6 @@ func TestMasterPasswordImport(t *testing.T) {
 	if stored_password != imported_password {
 		t.Error("Password mismatch")
 	}
-
 
 	t.Cleanup(master_password_service_test_cleanup)
 }

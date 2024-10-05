@@ -449,7 +449,11 @@ func TestLoginDataRecrpyt(t *testing.T) {
 		login_service.AddLoginData(&login_data)
 	}
 
-	err = login_service.recryptData(old_password)
+	data := make(map[string]string)
+	data["OLD_PASSWORD"] = old_password
+	data["NEW_PASSWORD"] = "123"
+
+	err = login_service.recryptData(data)
 
 	if err != nil {
 		t.Error(err.Error())
