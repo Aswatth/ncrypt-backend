@@ -62,17 +62,23 @@ func (obj *MasterPasswordService) UpdateMasterPassword(old_master_password strin
 	}
 
 	logger.Log.Print("Validating old password")
-	old_master_password_hash := encryptor.CreateHash(old_master_password)
+	result, err := obj.Validate(old_master_password)
 
-	if old_master_password_hash != stored_master_password_hash {
-		return errors.New("Invalid old password")
+	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
+		return err
+	}
+	if !result {
+		err = errors.New("password does not match")
+		logger.Log.Printf("ERROR: %s", err.Error())
+		return err
 	}
 
 	new_master_password_hash := encryptor.CreateHash(new_master_password)
 
 	logger.Log.Print("Checking if new password is same as old password")
 	if new_master_password_hash == stored_master_password_hash {
-		return errors.New("New password cannot be same as old password")
+		return errors.New("new password cannot be same as old password")
 	}
 
 	err = obj.SetMasterPassword(new_master_password)
@@ -101,7 +107,7 @@ func (obj *MasterPasswordService) UpdateMasterPassword(old_master_password strin
 	data_map := make(map[string]string)
 	data_map["OLD_PASSWORD"] = stored_master_password_hash
 	data_map["NEW_PASSWORD"] = new_master_password_hash
-	
+
 	event_data := utils.Event{
 		Type: "UPDATE_MASTER_PASSWORD",
 		Data: data_map,
