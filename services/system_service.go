@@ -45,15 +45,20 @@ func (obj *SystemService) Init() {
 	obj.SESSION_DURATION_IN_MINUTES = 20 //20 minutes is default
 	logger.Log.Printf("System service initialized")
 
-	_, err := obj.GetSystemData()
+	system_data, err := obj.GetSystemData()
 
 	isNewUser := "false"
+	theme := "SYSTEM"
 
-	if err != nil && err == badger.ErrKeyNotFound {
-		isNewUser = "true"
+	if err != nil {
+		if err == badger.ErrKeyNotFound {
+			isNewUser = "true"
+		}
+	} else {
+		theme = system_data.Theme
 	}
 
-	go obj.launchUI(os.Getenv("UI_EXECUTABLE_PATH"), []string{os.Getenv("PORT"), isNewUser})
+	go obj.launchUI(os.Getenv("UI_EXECUTABLE_PATH"), []string{os.Getenv("PORT"), isNewUser, theme})
 }
 
 func (obj *SystemService) launchUI(commandPath string, args []string) {
@@ -143,7 +148,7 @@ func (obj *SystemService) Setup(master_password string, auto_backup_setting map[
 	password_generator_preferance.HasSpecialChar = false
 	password_generator_preferance.Length = 8
 
-	err = obj.initSystem(models.SystemData{LoginCount: 0, LastLoginDateTime: "", CurrentLoginDateTime: "", IsLoggedIn: false, PasswordGeneratorPreference: *password_generator_preferance, AutoBackupSetting: *new_auto_backup_setting, SessionDurationInMinutes: obj.SESSION_DURATION_IN_MINUTES})
+	err = obj.initSystem(models.SystemData{LoginCount: 0, LastLoginDateTime: "", CurrentLoginDateTime: "", IsLoggedIn: false, PasswordGeneratorPreference: *password_generator_preferance, AutoBackupSetting: *new_auto_backup_setting, SessionDurationInMinutes: obj.SESSION_DURATION_IN_MINUTES, Theme: "SYSTEM"})
 	if err != nil {
 		logger.Log.Printf("ERROR: %s", err.Error())
 		return err
@@ -576,4 +581,25 @@ func (obj *SystemService) ExtendSession() (string, error) {
 	}
 
 	return jwt.GenerateToken(system_data.SessionDurationInMinutes)
+}
+
+func (obj *SystemService) UpdateTheme(theme string) error {
+	logger.Log.Printf("Setting theme")
+	system_data, err := obj.GetSystemData()
+
+	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
+		return err
+	}
+
+	system_data.Theme = theme
+
+	err = obj.setSystemData(*system_data)
+
+	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
+		return err
+	}
+
+	return err
 }

@@ -229,6 +229,25 @@ func (obj *SystemController) ExtendSession(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, new_token)
 }
 
+func (obj *SystemController) UpdateTheme(ctx *gin.Context) {
+	var theme map[string]string
+
+	if err := ctx.ShouldBindBodyWithJSON(&theme); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		logger.Log.Printf("ERROR: %s", err.Error())
+		return
+	}
+	err := obj.service.UpdateTheme(theme["theme"])
+
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		logger.Log.Printf("ERROR: %s", err.Error())
+		return
+	}
+
+	ctx.Status(http.StatusOK)
+}
+
 func (obj *SystemController) RegisterRoutes(rg *gin.RouterGroup) {
 	group := rg.Group("system")
 
@@ -244,6 +263,8 @@ func (obj *SystemController) RegisterRoutes(rg *gin.RouterGroup) {
 	group.PUT("/password_generator_preference", obj.UpdatePasswordGeneratorPreference)
 	group.PUT("/session_duration", obj.UpdateSessionDuration)
 	group.GET("/session_duration", obj.ExtendSession)
+
+	group.PUT("/theme", obj.UpdateTheme)
 
 	group.GET("/data", obj.GetSystemData)
 	group.POST("/logout", obj.Logout)
