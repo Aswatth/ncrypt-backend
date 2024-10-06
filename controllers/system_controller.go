@@ -13,8 +13,9 @@ type SystemController struct {
 	service services.SystemService
 }
 
-func (obj *SystemController) Init(service services.SystemService) {
-	obj.service = service
+func (obj *SystemController) Init() {
+	obj.service = *new(services.SystemService)
+	obj.service.Init()
 }
 
 func (obj *SystemController) GetSystemData(ctx *gin.Context) {
