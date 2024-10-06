@@ -337,94 +337,421 @@ func TestExport_IncorrectFormat(t *testing.T) {
 	t.Cleanup(system_service_test_cleanup)
 }
 
-// func TestGeneratePassword(t *testing.T) {
-// 	service := new(SystemService)
-// 	service.Init()
+func TestSetPasswordPreference_Default(t *testing.T) {
+	service := new(SystemService)
+	service.Init()
 
-// 	t.Run("Default case", func(t *testing.T) {
-// 		t.Parallel()
-// 		password := service.GeneratePassword(false, false, false, 8)
+	password := "12345"
+	auto_backup_setting := make(map[string]interface{})
+	auto_backup_setting["is_enabled"] = false
+	auto_backup_setting["backup_location"] = ""
+	auto_backup_setting["backup_file_name"] = ""
 
-// 		if password == "" {
-// 			t.Error("Generated password cannot be empty")
-// 		}
-// 	},
-// 	)
+	err := service.Setup(password, auto_backup_setting)
 
-// 	t.Run("With digits", func(t *testing.T) {
-// 		t.Parallel()
-// 		password := service.GeneratePassword(true, false, false, 8)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
-// 		if password == "" {
-// 			t.Error("Generated password cannot be empty")
-// 		}
-// 	})
+	passwordPreference := make(map[string]interface{})
+	passwordPreference["has_digits"] = false
+	passwordPreference["has_uppercase"] = false
+	passwordPreference["has_special_char"] = false
+	passwordPreference["length"] = float64(8)
 
-// 	t.Run("With uppercase characters", func(t *testing.T) {
-// 		t.Parallel()
-// 		password := service.GeneratePassword(false, true, false, 8)
+	err = service.UpdatePasswordGeneratorPreference(passwordPreference)
 
-// 		if password == "" {
-// 			t.Error("Generated password cannot be empty")
-// 		}
-// 	})
+	if err != nil {
+		t.Error(err.Error())
+	}
 
-// 	t.Run("With special characters", func(t *testing.T) {
-// 		t.Parallel()
-// 		password := service.GeneratePassword(false, false, true, 8)
+	fetched_preference, err := service.GetPasswordGeneratorPreference()
 
-// 		if password == "" {
-// 			t.Error("Generated password cannot be empty")
-// 		}
-// 	})
+	if err != nil {
+		t.Error(err.Error())
+	}
 
-// 	t.Run("With digits and upper case", func(t *testing.T) {
-// 		t.Parallel()
-// 		password := service.GeneratePassword(true, true, false, 8)
+	if fetched_preference.HasDigits != passwordPreference["has_digits"] && fetched_preference.HasUpperCase != passwordPreference["has_uppercase"] && fetched_preference.HasSpecialChar != passwordPreference["has_special_char"] && fetched_preference.Length != passwordPreference["length"] {
+		t.Errorf("Mismatch in data\nExpected:\t%v\nActual:\t%v", passwordPreference, fetched_preference)
+	}
 
-// 		if password == "" {
-// 			t.Error("Generated password cannot be empty")
-// 		}
-// 	})
+	t.Cleanup(system_service_test_cleanup)
+}
 
-// 	t.Run("With uppercase and special characters", func(t *testing.T) {
-// 		t.Parallel()
-// 		password := service.GeneratePassword(false, true, true, 8)
+func TestSetPasswordPreference_OnlyDigits(t *testing.T) {
+	service := new(SystemService)
+	service.Init()
 
-// 		if password == "" {
-// 			t.Error("Generated password cannot be empty")
-// 		}
-// 	})
+	password := "12345"
+	auto_backup_setting := make(map[string]interface{})
+	auto_backup_setting["is_enabled"] = false
+	auto_backup_setting["backup_location"] = ""
+	auto_backup_setting["backup_file_name"] = ""
 
-// 	t.Run("With digits and special characters", func(t *testing.T) {
-// 		t.Parallel()
-// 		password := service.GeneratePassword(true, false, true, 8)
+	err := service.Setup(password, auto_backup_setting)
 
-// 		if password == "" {
-// 			t.Error("Generated password cannot be empty")
-// 		}
-// 	})
+	if err != nil {
+		t.Error(err.Error())
+	}
 
-// 	t.Run("With digits, uppercase and special characters", func(t *testing.T) {
-// 		t.Parallel()
-// 		password := service.GeneratePassword(true, true, true, 8)
+	passwordPreference := make(map[string]interface{})
+	passwordPreference["has_digits"] = true
+	passwordPreference["has_uppercase"] = false
+	passwordPreference["has_special_char"] = false
+	passwordPreference["length"] = float64(8)
 
-// 		if password == "" {
-// 			t.Error("Generated password cannot be empty")
-// 		}
-// 	})
+	err = service.UpdatePasswordGeneratorPreference(passwordPreference)
 
-// 	for i := 8; i <= 16; i++ {
-// 		t.Run("With length "+fmt.Sprintf("%d", i), func(t *testing.T) {
-// 			t.Parallel()
-// 			password := service.GeneratePassword(false, false, true, 16)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
-// 			if password == "" {
-// 				t.Error("Generated password cannot be empty")
-// 			}
-// 		})
-// 	}
-// }
+	fetched_preference, err := service.GetPasswordGeneratorPreference()
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	if fetched_preference.HasDigits != passwordPreference["has_digits"] && fetched_preference.HasUpperCase != passwordPreference["has_uppercase"] && fetched_preference.HasSpecialChar != passwordPreference["has_special_char"] && fetched_preference.Length != passwordPreference["length"] {
+		t.Errorf("Mismatch in data\nExpected:\t%v\nActual:\t%v", passwordPreference, fetched_preference)
+	}
+
+	t.Cleanup(system_service_test_cleanup)
+}
+
+func TestSetPasswordPreference_OnlyUppercase(t *testing.T) {
+	service := new(SystemService)
+	service.Init()
+
+	password := "12345"
+	auto_backup_setting := make(map[string]interface{})
+	auto_backup_setting["is_enabled"] = false
+	auto_backup_setting["backup_location"] = ""
+	auto_backup_setting["backup_file_name"] = ""
+
+	err := service.Setup(password, auto_backup_setting)
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	passwordPreference := make(map[string]interface{})
+	passwordPreference["has_digits"] = false
+	passwordPreference["has_uppercase"] = true
+	passwordPreference["has_special_char"] = false
+	passwordPreference["length"] = float64(8)
+
+	err = service.UpdatePasswordGeneratorPreference(passwordPreference)
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	fetched_preference, err := service.GetPasswordGeneratorPreference()
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	if fetched_preference.HasDigits != passwordPreference["has_digits"] && fetched_preference.HasUpperCase != passwordPreference["has_uppercase"] && fetched_preference.HasSpecialChar != passwordPreference["has_special_char"] && fetched_preference.Length != passwordPreference["length"] {
+		t.Errorf("Mismatch in data\nExpected:\t%v\nActual:\t%v", passwordPreference, fetched_preference)
+	}
+
+	t.Cleanup(system_service_test_cleanup)
+}
+
+func TestSetPasswordPreference_OnlySpecialChar(t *testing.T) {
+	service := new(SystemService)
+	service.Init()
+
+	password := "12345"
+	auto_backup_setting := make(map[string]interface{})
+	auto_backup_setting["is_enabled"] = false
+	auto_backup_setting["backup_location"] = ""
+	auto_backup_setting["backup_file_name"] = ""
+
+	err := service.Setup(password, auto_backup_setting)
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	passwordPreference := make(map[string]interface{})
+	passwordPreference["has_digits"] = false
+	passwordPreference["has_uppercase"] = false
+	passwordPreference["has_special_char"] = true
+	passwordPreference["length"] = float64(8)
+
+	err = service.UpdatePasswordGeneratorPreference(passwordPreference)
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	fetched_preference, err := service.GetPasswordGeneratorPreference()
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	if fetched_preference.HasDigits != passwordPreference["has_digits"] && fetched_preference.HasUpperCase != passwordPreference["has_uppercase"] && fetched_preference.HasSpecialChar != passwordPreference["has_special_char"] && fetched_preference.Length != passwordPreference["length"] {
+		t.Errorf("Mismatch in data\nExpected:\t%v\nActual:\t%v", passwordPreference, fetched_preference)
+	}
+
+	t.Cleanup(system_service_test_cleanup)
+}
+
+func TestSetPasswordPreference_OnlyDigitsAndUppercase(t *testing.T) {
+	service := new(SystemService)
+	service.Init()
+
+	password := "12345"
+	auto_backup_setting := make(map[string]interface{})
+	auto_backup_setting["is_enabled"] = false
+	auto_backup_setting["backup_location"] = ""
+	auto_backup_setting["backup_file_name"] = ""
+
+	err := service.Setup(password, auto_backup_setting)
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	passwordPreference := make(map[string]interface{})
+	passwordPreference["has_digits"] = true
+	passwordPreference["has_uppercase"] = true
+	passwordPreference["has_special_char"] = false
+	passwordPreference["length"] = float64(8)
+
+	err = service.UpdatePasswordGeneratorPreference(passwordPreference)
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	fetched_preference, err := service.GetPasswordGeneratorPreference()
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	if fetched_preference.HasDigits != passwordPreference["has_digits"] && fetched_preference.HasUpperCase != passwordPreference["has_uppercase"] && fetched_preference.HasSpecialChar != passwordPreference["has_special_char"] && fetched_preference.Length != passwordPreference["length"] {
+		t.Errorf("Mismatch in data\nExpected:\t%v\nActual:\t%v", passwordPreference, fetched_preference)
+	}
+
+	t.Cleanup(system_service_test_cleanup)
+}
+
+func TestSetPasswordPreference_OnlyDigitsAndSpecialChar(t *testing.T) {
+	service := new(SystemService)
+	service.Init()
+
+	password := "12345"
+	auto_backup_setting := make(map[string]interface{})
+	auto_backup_setting["is_enabled"] = false
+	auto_backup_setting["backup_location"] = ""
+	auto_backup_setting["backup_file_name"] = ""
+
+	err := service.Setup(password, auto_backup_setting)
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	passwordPreference := make(map[string]interface{})
+	passwordPreference["has_digits"] = true
+	passwordPreference["has_uppercase"] = false
+	passwordPreference["has_special_char"] = true
+	passwordPreference["length"] = float64(8)
+
+	err = service.UpdatePasswordGeneratorPreference(passwordPreference)
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	fetched_preference, err := service.GetPasswordGeneratorPreference()
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	if fetched_preference.HasDigits != passwordPreference["has_digits"] && fetched_preference.HasUpperCase != passwordPreference["has_uppercase"] && fetched_preference.HasSpecialChar != passwordPreference["has_special_char"] && fetched_preference.Length != passwordPreference["length"] {
+		t.Errorf("Mismatch in data\nExpected:\t%v\nActual:\t%v", passwordPreference, fetched_preference)
+	}
+
+	t.Cleanup(system_service_test_cleanup)
+}
+
+func TestSetPasswordPreference_OnlyUppercaseAndSpecialChar(t *testing.T) {
+	service := new(SystemService)
+	service.Init()
+
+	password := "12345"
+	auto_backup_setting := make(map[string]interface{})
+	auto_backup_setting["is_enabled"] = false
+	auto_backup_setting["backup_location"] = ""
+	auto_backup_setting["backup_file_name"] = ""
+
+	err := service.Setup(password, auto_backup_setting)
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	passwordPreference := make(map[string]interface{})
+	passwordPreference["has_digits"] = false
+	passwordPreference["has_uppercase"] = true
+	passwordPreference["has_special_char"] = true
+	passwordPreference["length"] = float64(8)
+
+	err = service.UpdatePasswordGeneratorPreference(passwordPreference)
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	fetched_preference, err := service.GetPasswordGeneratorPreference()
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	if fetched_preference.HasDigits != passwordPreference["has_digits"] && fetched_preference.HasUpperCase != passwordPreference["has_uppercase"] && fetched_preference.HasSpecialChar != passwordPreference["has_special_char"] && fetched_preference.Length != passwordPreference["length"] {
+		t.Errorf("Mismatch in data\nExpected:\t%v\nActual:\t%v", passwordPreference, fetched_preference)
+	}
+
+	t.Cleanup(system_service_test_cleanup)
+}
+
+func TestSetPasswordPreference_All(t *testing.T) {
+	service := new(SystemService)
+	service.Init()
+
+	password := "12345"
+	auto_backup_setting := make(map[string]interface{})
+	auto_backup_setting["is_enabled"] = false
+	auto_backup_setting["backup_location"] = ""
+	auto_backup_setting["backup_file_name"] = ""
+
+	err := service.Setup(password, auto_backup_setting)
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	passwordPreference := make(map[string]interface{})
+	passwordPreference["has_digits"] = true
+	passwordPreference["has_uppercase"] = true
+	passwordPreference["has_special_char"] = true
+	passwordPreference["length"] = float64(8)
+
+	err = service.UpdatePasswordGeneratorPreference(passwordPreference)
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	fetched_preference, err := service.GetPasswordGeneratorPreference()
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	if fetched_preference.HasDigits != passwordPreference["has_digits"] && fetched_preference.HasUpperCase != passwordPreference["has_uppercase"] && fetched_preference.HasSpecialChar != passwordPreference["has_special_char"] && fetched_preference.Length != passwordPreference["length"] {
+		t.Errorf("Mismatch in data\nExpected:\t%v\nActual:\t%v", passwordPreference, fetched_preference)
+	}
+
+	t.Cleanup(system_service_test_cleanup)
+}
+
+func TestSetPasswordPreference_Length(t *testing.T) {
+	service := new(SystemService)
+	service.Init()
+
+	password := "12345"
+	auto_backup_setting := make(map[string]interface{})
+	auto_backup_setting["is_enabled"] = false
+	auto_backup_setting["backup_location"] = ""
+	auto_backup_setting["backup_file_name"] = ""
+
+	err := service.Setup(password, auto_backup_setting)
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	passwordPreference := make(map[string]interface{})
+	passwordPreference["has_digits"] = false
+	passwordPreference["has_uppercase"] = false
+	passwordPreference["has_special_char"] = false
+	passwordPreference["length"] = float64(16)
+
+	err = service.UpdatePasswordGeneratorPreference(passwordPreference)
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	fetched_preference, err := service.GetPasswordGeneratorPreference()
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	if fetched_preference.HasDigits != passwordPreference["has_digits"] && fetched_preference.HasUpperCase != passwordPreference["has_uppercase"] && fetched_preference.HasSpecialChar != passwordPreference["has_special_char"] && fetched_preference.Length != passwordPreference["length"] {
+		t.Errorf("Mismatch in data\nExpected:\t%v\nActual:\t%v", passwordPreference, fetched_preference)
+	}
+
+	t.Cleanup(system_service_test_cleanup)
+}
+
+func TestSetPasswordPreference_GeneratePassword(t *testing.T) {
+	service := new(SystemService)
+	service.Init()
+
+	password := "12345"
+	auto_backup_setting := make(map[string]interface{})
+	auto_backup_setting["is_enabled"] = false
+	auto_backup_setting["backup_location"] = ""
+	auto_backup_setting["backup_file_name"] = ""
+
+	err := service.Setup(password, auto_backup_setting)
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	passwordPreference := make(map[string]interface{})
+	passwordPreference["has_digits"] = true
+	passwordPreference["has_uppercase"] = true
+	passwordPreference["has_special_char"] = true
+	passwordPreference["length"] = float64(8)
+
+	err = service.UpdatePasswordGeneratorPreference(passwordPreference)
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	fetched_preference, err := service.GetPasswordGeneratorPreference()
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	if fetched_preference.HasDigits != passwordPreference["has_digits"] && fetched_preference.HasUpperCase != passwordPreference["has_uppercase"] && fetched_preference.HasSpecialChar != passwordPreference["has_special_char"] && fetched_preference.Length != passwordPreference["length"] {
+		t.Errorf("Mismatch in data\nExpected:\t%v\nActual:\t%v", passwordPreference, fetched_preference)
+	}
+
+	generated_password := service.GeneratePassword()
+
+	if len(generated_password) == 0 {
+		t.Error("Generated password should be empty")
+	}
+
+	t.Cleanup(system_service_test_cleanup)
+}
 
 func TestImport(t *testing.T) {
 	service := new(SystemService)
@@ -747,6 +1074,109 @@ func TestUpadteAutomaticBackupData_EmptyFileName(t *testing.T) {
 
 	if err == nil {
 		t.Error("Should cause an error")
+	}
+
+	t.Cleanup(system_service_test_cleanup)
+}
+
+func TestUpdateSessionDuration(t *testing.T) {
+	service := new(SystemService)
+	service.Init()
+
+	password := "12345"
+	auto_backup_setting := make(map[string]interface{})
+	auto_backup_setting["is_enabled"] = false
+	auto_backup_setting["backup_location"] = ""
+	auto_backup_setting["backup_file_name"] = ""
+
+	err := service.Setup(password, auto_backup_setting)
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	updated_token, err := service.UpdateSessionDuration(30)
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	if len(updated_token) == 0 {
+		t.Error("Token should be empty")
+	}
+
+	systemd_data, err := service.GetSystemData()
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	if systemd_data.SessionDurationInMinutes != 30 {
+		t.Errorf("Incorrect session duration\nExpected:%d\nActual:%d", 30, systemd_data.SessionDurationInMinutes)
+	}
+
+	t.Cleanup(system_service_test_cleanup)
+}
+
+func TestExtendSessionDuration(t *testing.T) {
+	service := new(SystemService)
+	service.Init()
+
+	password := "12345"
+	auto_backup_setting := make(map[string]interface{})
+	auto_backup_setting["is_enabled"] = false
+	auto_backup_setting["backup_location"] = ""
+	auto_backup_setting["backup_file_name"] = ""
+
+	err := service.Setup(password, auto_backup_setting)
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	updated_token, err := service.ExtendSession()
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	if len(updated_token) == 0 {
+		t.Error("Token should be empty")
+	}
+
+	t.Cleanup(system_service_test_cleanup)
+}
+
+func TestUpdateTheme(t *testing.T) {
+	service := new(SystemService)
+	service.Init()
+
+	password := "12345"
+	auto_backup_setting := make(map[string]interface{})
+	auto_backup_setting["is_enabled"] = false
+	auto_backup_setting["backup_location"] = ""
+	auto_backup_setting["backup_file_name"] = ""
+
+	err := service.Setup(password, auto_backup_setting)
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	err = service.UpdateTheme("DARK")
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	systemd_data, err := service.GetSystemData()
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	if systemd_data.Theme != "DARK" {
+		t.Errorf("Incorrect theme\nExpected:%s\nActual:%s", "DARK", systemd_data.Theme)
 	}
 
 	t.Cleanup(system_service_test_cleanup)
