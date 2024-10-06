@@ -15,8 +15,7 @@ import (
 )
 
 func login_controller_test_cleanup() {
-	os.RemoveAll(os.Getenv("LOGIN_DB_NAME"))
-	os.RemoveAll(os.Getenv("MASTER_PASSWORD_DB_NAME"))
+	os.RemoveAll(os.Getenv("STORAGE_FOLDER"))
 }
 
 func compateData(expected models.Login, actual models.Login) bool {
@@ -38,13 +37,13 @@ func compateData(expected models.Login, actual models.Login) bool {
 
 func TestCreateLogin_Without_Master_Password(t *testing.T) {
 
-	login_service := new(services.LoginService)
+	login_service := new(services.LoginDataService)
 	login_service.Init()
 
-	login_controller := new(LoginController)
-	login_controller.Init(login_service)
+	login_controller := new(LoginDataController)
+	login_controller.Init()
 
-	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
 
 	login_data_bytes, err := json.Marshal(login_data)
 
@@ -55,7 +54,7 @@ func TestCreateLogin_Without_Master_Password(t *testing.T) {
 	server := gin.Default()
 	test := httptest.NewRecorder()
 
-	server.POST("/login", login_controller.CreateLogin)
+	server.POST("/login", login_controller.AddLoginData)
 	req, _ := http.NewRequest("POST", "/login", bytes.NewReader(login_data_bytes))
 
 	server.ServeHTTP(test, req)
@@ -82,13 +81,13 @@ func TestCreateLogin_With_Master_Password(t *testing.T) {
 	master_password_service.Init()
 	master_password_service.SetMasterPassword("12345")
 
-	login_service := new(services.LoginService)
+	login_service := new(services.LoginDataService)
 	login_service.Init()
 
-	login_controller := new(LoginController)
-	login_controller.Init(login_service)
+	login_controller := new(LoginDataController)
+	login_controller.Init()
 
-	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
 
 	login_data_bytes, err := json.Marshal(login_data)
 
@@ -99,7 +98,7 @@ func TestCreateLogin_With_Master_Password(t *testing.T) {
 	server := gin.Default()
 	test := httptest.NewRecorder()
 
-	server.POST("/login", login_controller.CreateLogin)
+	server.POST("/login", login_controller.AddLoginData)
 	req, _ := http.NewRequest("POST", "/login", bytes.NewReader(login_data_bytes))
 
 	server.ServeHTTP(test, req)
@@ -123,13 +122,13 @@ func TestCreateLogin_With_Duplicate_Account_Username(t *testing.T) {
 	master_password_service.Init()
 	master_password_service.SetMasterPassword("12345")
 
-	login_service := new(services.LoginService)
+	login_service := new(services.LoginDataService)
 	login_service.Init()
 
-	login_controller := new(LoginController)
-	login_controller.Init(login_service)
+	login_controller := new(LoginDataController)
+	login_controller.Init()
 
-	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "abc", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "abc", Password: "456"}}, Attributes: models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
 
 	login_data_bytes, err := json.Marshal(login_data)
 
@@ -140,7 +139,7 @@ func TestCreateLogin_With_Duplicate_Account_Username(t *testing.T) {
 	server := gin.Default()
 	test := httptest.NewRecorder()
 
-	server.POST("/login", login_controller.CreateLogin)
+	server.POST("/login", login_controller.AddLoginData)
 	req, _ := http.NewRequest("POST", "/login", bytes.NewReader(login_data_bytes))
 
 	server.ServeHTTP(test, req)
@@ -167,13 +166,13 @@ func TestGetLoginData_All(t *testing.T) {
 	master_password_service.Init()
 	master_password_service.SetMasterPassword("12345")
 
-	login_service := new(services.LoginService)
+	login_service := new(services.LoginDataService)
 	login_service.Init()
 
-	login_controller := new(LoginController)
-	login_controller.Init(login_service)
+	login_controller := new(LoginDataController)
+	login_controller.Init()
 
-	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
 
 	err := login_service.AddLoginData(login_data)
 	if err != nil {
@@ -225,13 +224,13 @@ func TestGetLoginData_PASS(t *testing.T) {
 	master_password_service.Init()
 	master_password_service.SetMasterPassword("12345")
 
-	login_service := new(services.LoginService)
+	login_service := new(services.LoginDataService)
 	login_service.Init()
 
-	login_controller := new(LoginController)
-	login_controller.Init(login_service)
+	login_controller := new(LoginDataController)
+	login_controller.Init()
 
-	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
 
 	err := login_service.AddLoginData(login_data)
 	if err != nil {
@@ -279,13 +278,13 @@ func TestGetLoginData_FAIL(t *testing.T) {
 	master_password_service.Init()
 	master_password_service.SetMasterPassword("12345")
 
-	login_service := new(services.LoginService)
+	login_service := new(services.LoginDataService)
 	login_service.Init()
 
-	login_controller := new(LoginController)
-	login_controller.Init(login_service)
+	login_controller := new(LoginDataController)
+	login_controller.Init()
 
-	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
 
 	err := login_service.AddLoginData(login_data)
 	if err != nil {
@@ -334,13 +333,13 @@ func TestUpdateLoginData_Without_Duplicate_Account_Username(t *testing.T) {
 	master_password_service.Init()
 	master_password_service.SetMasterPassword("12345")
 
-	login_service := new(services.LoginService)
+	login_service := new(services.LoginDataService)
 	login_service.Init()
 
-	login_controller := new(LoginController)
-	login_controller.Init(login_service)
+	login_controller := new(LoginDataController)
+	login_controller.Init()
 
-	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
 
 	err := login_service.AddLoginData(login_data)
 
@@ -348,7 +347,7 @@ func TestUpdateLoginData_Without_Duplicate_Account_Username(t *testing.T) {
 		t.Error(err.Error())
 	}
 
-	updated_login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "efg", Password: "123"}, {Username: "EFG", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+	updated_login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "efg", Password: "123"}, {Username: "EFG", Password: "456"}}, Attributes: models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
 
 	updated_login_data_bytes, err := json.Marshal(updated_login_data)
 
@@ -395,13 +394,13 @@ func TestUpdateLoginData_With_Duplicate_Account_Username(t *testing.T) {
 	master_password_service.Init()
 	master_password_service.SetMasterPassword("12345")
 
-	login_service := new(services.LoginService)
+	login_service := new(services.LoginDataService)
 	login_service.Init()
 
-	login_controller := new(LoginController)
-	login_controller.Init(login_service)
+	login_controller := new(LoginDataController)
+	login_controller.Init()
 
-	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
 
 	err := login_service.AddLoginData(login_data)
 
@@ -409,7 +408,7 @@ func TestUpdateLoginData_With_Duplicate_Account_Username(t *testing.T) {
 		t.Error(err.Error())
 	}
 
-	updated_login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "ttt", Password: "123"}, {Username: "ttt", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+	updated_login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "ttt", Password: "123"}, {Username: "ttt", Password: "456"}}, Attributes: models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
 
 	updated_login_data_bytes, err := json.Marshal(updated_login_data)
 
@@ -447,13 +446,13 @@ func TestUpdateLoginData_Without_Conflicting_Names(t *testing.T) {
 	master_password_service.Init()
 	master_password_service.SetMasterPassword("12345")
 
-	login_service := new(services.LoginService)
+	login_service := new(services.LoginDataService)
 	login_service.Init()
 
-	login_controller := new(LoginController)
-	login_controller.Init(login_service)
+	login_controller := new(LoginDataController)
+	login_controller.Init()
 
-	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
 
 	err := login_service.AddLoginData(login_data)
 
@@ -461,7 +460,7 @@ func TestUpdateLoginData_Without_Conflicting_Names(t *testing.T) {
 		t.Error(err.Error())
 	}
 
-	updated_login_data := &models.Login{Name: "email", URL: "https://email.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+	updated_login_data := &models.Login{Name: "email", URL: "https://email.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
 
 	updated_login_data_bytes, err := json.Marshal(updated_login_data)
 
@@ -497,13 +496,13 @@ func TestUpdateLoginData_With_Conflicting_Names(t *testing.T) {
 	master_password_service.Init()
 	master_password_service.SetMasterPassword("12345")
 
-	login_service := new(services.LoginService)
+	login_service := new(services.LoginDataService)
 	login_service.Init()
 
-	login_controller := new(LoginController)
-	login_controller.Init(login_service)
+	login_controller := new(LoginDataController)
+	login_controller.Init()
 
-	login_data_list := []models.Login{{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}}, {Name: "email", URL: "https://email.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}}}
+	login_data_list := []models.Login{{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: models.Attributes{IsFavourite: true, RequireMasterPassword: false}}, {Name: "email", URL: "https://email.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: models.Attributes{IsFavourite: true, RequireMasterPassword: false}}}
 
 	for _, login_data := range login_data_list {
 		err := login_service.AddLoginData(&login_data)
@@ -513,7 +512,7 @@ func TestUpdateLoginData_With_Conflicting_Names(t *testing.T) {
 		}
 	}
 
-	updated_login_data := &models.Login{Name: "email", URL: "https://email.com", Accounts: []models.Account{{Username: "ttt", Password: "123"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+	updated_login_data := &models.Login{Name: "email", URL: "https://email.com", Accounts: []models.Account{{Username: "ttt", Password: "123"}}, Attributes: models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
 
 	updated_login_data_bytes, err := json.Marshal(updated_login_data)
 
@@ -551,13 +550,13 @@ func TestDeleteLoginData(t *testing.T) {
 	master_password_service.Init()
 	master_password_service.SetMasterPassword("12345")
 
-	login_service := new(services.LoginService)
+	login_service := new(services.LoginDataService)
 	login_service.Init()
 
-	login_controller := new(LoginController)
-	login_controller.Init(login_service)
+	login_controller := new(LoginDataController)
+	login_controller.Init()
 
-	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: "123"}, {Username: "pqr", Password: "456"}}, Attributes: models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
 
 	err := login_service.AddLoginData(login_data)
 
@@ -597,14 +596,14 @@ func TestGetAccountPassword(t *testing.T) {
 	master_password_service.Init()
 	master_password_service.SetMasterPassword("12345")
 
-	login_service := new(services.LoginService)
+	login_service := new(services.LoginDataService)
 	login_service.Init()
 
-	login_controller := new(LoginController)
-	login_controller.Init(login_service)
+	login_controller := new(LoginDataController)
+	login_controller.Init()
 
 	password := "12345"
-	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: password}}, Attributes: &models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+	login_data := &models.Login{Name: "github", URL: "https://github.com", Accounts: []models.Account{{Username: "abc", Password: password}}, Attributes: models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
 
 	err := login_service.AddLoginData(login_data)
 
