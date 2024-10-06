@@ -184,6 +184,9 @@ func TestSignin(t *testing.T) {
 	auto_backup_setting["backup_file_name"] = ""
 
 	err := system_service.Setup("12345", auto_backup_setting)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	request_data := make(map[string]interface{})
 	request_data["master_password"] = "12345"
@@ -226,6 +229,9 @@ func TestSignIn_WithIncorrectPassword(t *testing.T) {
 	auto_backup_setting["backup_file_name"] = ""
 
 	err := system_service.Setup("12345", auto_backup_setting)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	request_data := make(map[string]interface{})
 	request_data["master_password"] = "123"
@@ -342,6 +348,9 @@ func TestExport_CurrentFolder(t *testing.T) {
 	auto_backup_setting["backup_file_name"] = ""
 
 	err := system_service.Setup("12345", auto_backup_setting)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	request_data := make(map[string]interface{})
 	request_data["file_name"] = "test_export.ncrypt"
@@ -394,6 +403,9 @@ func TestExport_WithCustomPath(t *testing.T) {
 	auto_backup_setting["backup_file_name"] = ""
 
 	err := system_service.Setup("12345", auto_backup_setting)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	request_data := make(map[string]interface{})
 	request_data["file_name"] = "test_export.ncrypt"
@@ -446,6 +458,9 @@ func TestExport_WithInvalidPath(t *testing.T) {
 	auto_backup_setting["backup_file_name"] = ""
 
 	err := system_service.Setup("12345", auto_backup_setting)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	request_data := make(map[string]interface{})
 	request_data["file_name"] = "test_export.ncrypt"
@@ -489,6 +504,9 @@ func TestExport_IncorrectFormat(t *testing.T) {
 	auto_backup_setting["backup_file_name"] = ""
 
 	err := system_service.Setup("12345", auto_backup_setting)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	request_data := make(map[string]interface{})
 	request_data["file_name"] = "test_export.txt"
@@ -532,6 +550,9 @@ func TestSetPasswordPreference_Default(t *testing.T) {
 	auto_backup_setting["backup_file_name"] = ""
 
 	err := system_service.Setup("12345", auto_backup_setting)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	request_data := make(map[string]interface{})
 	request_data["has_digits"] = false
@@ -577,6 +598,9 @@ func TestSetPasswordPreference_OnlyDigits(t *testing.T) {
 	auto_backup_setting["backup_file_name"] = ""
 
 	err := system_service.Setup("12345", auto_backup_setting)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	request_data := make(map[string]interface{})
 	request_data["has_digits"] = true
@@ -622,6 +646,9 @@ func TestSetPasswordPreference_OnlyUppercase(t *testing.T) {
 	auto_backup_setting["backup_file_name"] = ""
 
 	err := system_service.Setup("12345", auto_backup_setting)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	request_data := make(map[string]interface{})
 	request_data["has_digits"] = false
@@ -667,6 +694,9 @@ func TestSetPasswordPreference_OnlySpecialChar(t *testing.T) {
 	auto_backup_setting["backup_file_name"] = ""
 
 	err := system_service.Setup("12345", auto_backup_setting)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	request_data := make(map[string]interface{})
 	request_data["has_digits"] = false
@@ -712,6 +742,9 @@ func TestSetPasswordPreference_OnlyDigitsAndUppercase(t *testing.T) {
 	auto_backup_setting["backup_file_name"] = ""
 
 	err := system_service.Setup("12345", auto_backup_setting)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	request_data := make(map[string]interface{})
 	request_data["has_digits"] = true
@@ -757,6 +790,9 @@ func TestSetPasswordPreference_OnlyDigitsAndSpecialChar(t *testing.T) {
 	auto_backup_setting["backup_file_name"] = ""
 
 	err := system_service.Setup("12345", auto_backup_setting)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	request_data := make(map[string]interface{})
 	request_data["has_digits"] = true
@@ -802,6 +838,9 @@ func TestSetPasswordPreference_OnlyUppercaseAndSpecialChar(t *testing.T) {
 	auto_backup_setting["backup_file_name"] = ""
 
 	err := system_service.Setup("12345", auto_backup_setting)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	request_data := make(map[string]interface{})
 	request_data["has_digits"] = false
@@ -847,6 +886,9 @@ func TestSetPasswordPreference_All(t *testing.T) {
 	auto_backup_setting["backup_file_name"] = ""
 
 	err := system_service.Setup("12345", auto_backup_setting)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	request_data := make(map[string]interface{})
 	request_data["has_digits"] = true
@@ -892,6 +934,9 @@ func TestSetPasswordPreference_Length(t *testing.T) {
 	auto_backup_setting["backup_file_name"] = ""
 
 	err := system_service.Setup("12345", auto_backup_setting)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	request_data := make(map[string]interface{})
 	request_data["has_digits"] = true
@@ -1107,6 +1152,9 @@ func TestBackup(t *testing.T) {
 	auto_backup_setting["backup_file_name"] = "test_backup"
 
 	err := system_service.Setup("12345", auto_backup_setting)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	server.POST("/system/backup", system_controller.Backup)
 	req, _ := http.NewRequest("POST", "/system/backup", bytes.NewBuffer([]byte{}))
@@ -1171,6 +1219,9 @@ func TestUpadteAutomaticBackupData_SettingToTrue(t *testing.T) {
 	auto_backup_setting["backup_file_name"] = ""
 
 	err := system_service.Setup("12345", auto_backup_setting)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	auto_backup_setting = make(map[string]interface{})
 	auto_backup_setting["is_enabled"] = true
@@ -1215,6 +1266,9 @@ func TestUpadteAutomaticBackupData_SettingToFalse(t *testing.T) {
 	auto_backup_setting["backup_file_name"] = ""
 
 	err := system_service.Setup("12345", auto_backup_setting)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	auto_backup_setting["is_enabled"] = false
 
@@ -1256,6 +1310,9 @@ func TestUpadteAutomaticBackupData_ChangingFileName(t *testing.T) {
 	auto_backup_setting["backup_file_name"] = "my_backup.ncrypt"
 
 	err := system_service.Setup("12345", auto_backup_setting)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	auto_backup_setting["backup_file_name"] = "backup.ncrypt"
 
@@ -1297,6 +1354,9 @@ func TestUpadteAutomaticBackupData_EmptyFileName(t *testing.T) {
 	auto_backup_setting["backup_file_name"] = "my_backup.ncrypt"
 
 	err := system_service.Setup("12345", auto_backup_setting)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	auto_backup_setting["backup_file_name"] = ""
 
@@ -1338,6 +1398,9 @@ func TestUpdateSessionDuration(t *testing.T) {
 	auto_backup_setting["backup_file_name"] = "my_backup.ncrypt"
 
 	err := system_service.Setup("12345", auto_backup_setting)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	request_data := make(map[string]interface{})
 	request_data["session_duration_in_minutes"] = 20
