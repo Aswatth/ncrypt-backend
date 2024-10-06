@@ -7,7 +7,9 @@ import (
 	"ncrypt/utils/encryptor"
 	"ncrypt/utils/logger"
 	"os"
+	"strings"
 
+	"github.com/dgraph-io/badger/v4"
 	"github.com/joho/godotenv"
 )
 
@@ -36,15 +38,12 @@ func (obj *NoteService) GetNote(created_date_time string) (*models.Note, error) 
 	var note models.Note
 	fetched_note, err := obj.database.GetData(created_date_time)
 
-	if fetched_note != nil {
-		note.FromMap(fetched_note.(map[string]interface{}))
-
-		return &note, err
-	} else {
-		logger.Log.Printf("ERROR: Data not found")
-		return nil, errors.New("not found")
+	if err != nil {
+		return &models.Note{}, err
 	}
+	note.FromMap(fetched_note.(map[string]interface{}))
 
+	return &note, err
 }
 
 func (obj *NoteService) GetAllNotes() ([]models.Note, error) {
@@ -92,14 +91,29 @@ func (obj *NoteService) GetDecryptedContent(created_date_time string) (string, e
 
 func (obj *NoteService) AddNote(note *models.Note) error {
 	logger.Log.Printf("Adding note")
-	master_password, err := obj.master_password_service.GetMasterPassword()
+	master_password_hash, err := obj.master_password_service.GetMasterPassword()
 
 	if err != nil {
+		if strings.ToUpper(err.Error()) == "KEY NOT FOUND" {
+			err = errors.New("master_password not set")
+			logger.Log.Printf("ERROR: %s", err.Error())
+			return err
+		}
 		return err
 	}
 
+	existing_note, err := obj.GetNote(note.CreatedDateTime)
+	if err != nil && err != badger.ErrKeyNotFound {
+		logger.Log.Printf("ERROR: %s", err.Error())
+		return err
+	}
+	if existing_note.CreatedDateTime != "" {
+		logger.Log.Printf("ERROR: %s", "CONFLICTING NAMES")
+		return errors.New(existing_note.CreatedDateTime + " already exists")
+	}
+
 	logger.Log.Printf("Encrypting content")
-	encrypted_content, err := encryptor.Encrypt(note.Content, master_password+note.CreatedDateTime)
+	encrypted_content, err := encryptor.Encrypt(note.Content, master_password_hash+note.CreatedDateTime)
 
 	if err != nil {
 		return err
@@ -135,12 +149,17 @@ func (obj *NoteService) UpdateNote(created_date_time string, updated_note models
 
 	updated_note.CreatedDateTime = fetched_note.CreatedDateTime
 
-	return obj.AddNote(&updated_note)
+	return obj.database.AddData(updated_note.CreatedDateTime, updated_note)
 }
 
 func (obj *NoteService) DeleteNote(created_date_time string) error {
 	logger.Log.Printf("Deleting note")
-	return obj.database.DeleteData(created_date_time)
+	err := obj.database.DeleteData(created_date_time)
+
+	if err != nil {
+		logger.Log.Printf("ERROR: %s", err.Error())
+	}
+	return err
 }
 func (obj *NoteService) recryptData(password_data map[string]string) error {
 	logger.Log.Printf("Recrypting notes content")
