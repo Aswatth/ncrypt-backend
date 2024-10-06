@@ -295,7 +295,7 @@ func TestGetDecryptedContent_ValidCreatedDateTime(t *testing.T) {
 	t.Cleanup(note_service_test_cleanup)
 }
 
-func TestGetDecryptedAccountPassword_InvalidCreatedDateTime(t *testing.T) {
+func TestGetDecryptedContent_InvalidCreatedDateTime(t *testing.T) {
 	note_service_test_init()
 
 	note := &models.Note{CreatedDateTime: "testing", Title: "test", Content: "this is a test", Attributes: models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
