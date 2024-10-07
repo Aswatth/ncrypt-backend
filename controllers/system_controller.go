@@ -249,6 +249,13 @@ func (obj *SystemController) UpdateTheme(ctx *gin.Context) {
 	ctx.Status(http.StatusOK)
 }
 
+func (obj *SystemController) GetTheme(ctx *gin.Context) {
+
+	theme := obj.service.GetTheme()
+
+	ctx.JSON(http.StatusOK, theme)
+}
+
 func (obj *SystemController) RegisterRoutes(rg *gin.RouterGroup) {
 	group := rg.Group("system")
 
@@ -256,6 +263,7 @@ func (obj *SystemController) RegisterRoutes(rg *gin.RouterGroup) {
 	group.POST("/signin", obj.SignIn)
 	group.GET("/generate_password", obj.GeneratePassword)
 	group.POST("/import", obj.Import)
+	group.GET("/theme", obj.GetTheme)
 
 	group.Use(jwt.ValidateAuthorization())
 	group.PUT("/automatic_backup_setting", obj.UpdateAutomaticBackup)

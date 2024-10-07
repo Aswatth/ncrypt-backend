@@ -649,3 +649,17 @@ func (obj *SystemService) UpdateTheme(theme string) error {
 
 	return err
 }
+
+func (obj *SystemService) GetTheme() string {
+	system_data, err := obj.GetSystemData()
+
+	var theme string
+	if err != nil {
+		theme = "SYSTEM"
+		return theme
+	} else {
+		theme = system_data.Theme
+	}
+
+	return theme
+}
