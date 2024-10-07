@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"ncrypt/controllers"
-	"ncrypt/services"
 	"ncrypt/utils/logger"
 	"net/http"
 	"os"
@@ -33,8 +32,6 @@ func main() {
 
 	base_path := server.Group("")
 
-	system_service := new(services.SystemService)
-	system_service.Init()
 	system_controller := new(controllers.SystemController)
 	system_controller.Init()
 	system_controller.RegisterRoutes(base_path)
@@ -46,7 +43,6 @@ func main() {
 	note_controller := new(controllers.NoteController)
 	note_controller.Init()
 	note_controller.RegisterRoutes(base_path)
-
 
 	master_password_controller := new(controllers.MasterPasswordController)
 	master_password_controller.Init()
