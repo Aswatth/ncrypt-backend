@@ -276,7 +276,7 @@ func (obj *LoginDataService) recryptData(password_data map[string]string) error 
 				return err
 			}
 
-			obj.database.AddData(login_list[i].Name, login_list[i])
+			obj.database.AddData(strings.ToUpper(login_list[i].Name), login_list[i])
 		}
 	}
 
