@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"log"
 	"ncrypt/controllers"
+	"ncrypt/utils"
 	"ncrypt/utils/logger"
 	"net/http"
-	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -19,7 +19,7 @@ func main() {
 	//Loading env
 	godotenv.Load()
 
-	port := os.Getenv("PORT")
+	utils.AssignDynamicPort()
 
 	gin.DefaultWriter = logger.Log.Writer()
 
@@ -52,5 +52,6 @@ func main() {
 		defer logger.Close()
 	}()
 
-	server.Run(":" + port)
+	logger.Log.Printf("Starting server on %s", utils.PORT)
+	server.Run(":" + utils.PORT)
 }

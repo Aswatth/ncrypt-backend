@@ -61,7 +61,7 @@ func (obj *SystemService) Init() {
 		theme = system_data.Theme
 	}
 
-	go obj.launchUI(os.Getenv("UI_EXECUTABLE_PATH"), []string{os.Getenv("PORT"), isNewUser, theme})
+	go obj.launchUI(os.Getenv("UI_EXECUTABLE_PATH"), []string{utils.PORT, isNewUser, theme})
 	restoreAndBringWindowToFront("NCRYPT")
 }
 
