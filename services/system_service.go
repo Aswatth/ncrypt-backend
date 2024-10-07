@@ -45,6 +45,7 @@ func (obj *SystemService) Init() {
 	obj.SESSION_DURATION_IN_MINUTES = 20 //20 minutes is default
 	logger.Log.Printf("System service initialized")
 
+	// Code to launch UI - comment these lines to prevent launching of multiple UI instances while testing.
 	system_data, err := obj.GetSystemData()
 
 	isNewUser := "false"
@@ -116,18 +117,13 @@ func (obj *SystemService) GetSystemData() (*models.SystemData, error) {
 
 func (obj *SystemService) Setup(master_password string, auto_backup_setting map[string]interface{}) error {
 
-	system_data, err := obj.GetSystemData()
+	_, err := obj.master_password_service.GetMasterPassword()
 
 	if err != nil {
 		if err != badger.ErrKeyNotFound {
 			logger.Log.Printf("ERROR: %s", err.Error())
 			return err
 		}
-	}
-
-	if system_data != nil {
-		logger.Log.Printf("ERROR: %s", "setup already completed")
-		return errors.New("setup already completed")
 	}
 
 	logger.Log.Printf("Setting up master password")
