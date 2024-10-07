@@ -394,7 +394,7 @@ func (obj *SystemService) Export(file_name string, file_path string) error {
 }
 
 func (obj *SystemService) Import(file_name string, file_path string, master_password string) error {
-	os.RemoveAll(os.Getenv("STORAGE_PATH"))
+	os.RemoveAll(os.Getenv("STORAGE_FOLDER"))
 
 	logger.Log.Println("Importing data")
 	file, err := os.Open(file_path + "\\" + file_name)
