@@ -141,15 +141,15 @@ func (obj *NoteService) UpdateNote(created_date_time string, updated_note models
 		return err
 	}
 
-	decrypted_content, err := encryptor.Decrypt(updated_note.Content, master_password+created_date_time)
+	encrypted_content, err := encryptor.Encrypt(updated_note.Content, master_password+created_date_time)
 
 	if err == nil {
-		updated_note.Content = decrypted_content
+		updated_note.Content = encrypted_content
 	}
 
 	updated_note.CreatedDateTime = fetched_note.CreatedDateTime
 
-	return obj.database.AddData(updated_note.CreatedDateTime, updated_note)
+	return obj.database.AddData(created_date_time, (&updated_note))
 }
 
 func (obj *NoteService) DeleteNote(created_date_time string) error {
