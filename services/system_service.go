@@ -15,7 +15,9 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
+	"unsafe"
 
 	"github.com/dgraph-io/badger/v4"
 	"github.com/joho/godotenv"
@@ -60,6 +62,7 @@ func (obj *SystemService) Init() {
 	}
 
 	go obj.launchUI(os.Getenv("UI_EXECUTABLE_PATH"), []string{os.Getenv("PORT"), isNewUser, theme})
+	restoreAndBringWindowToFront("NCRYPT")
 }
 
 func (obj *SystemService) launchUI(commandPath string, args []string) {
@@ -72,6 +75,40 @@ func (obj *SystemService) launchUI(commandPath string, args []string) {
 	}
 	obj.Logout()
 	os.Exit(0)
+}
+
+func restoreAndBringWindowToFront(title string) error {
+	user32 := syscall.NewLazyDLL("user32.dll")
+
+	findWindow := user32.NewProc("FindWindowW")
+	setForegroundWindow := user32.NewProc("SetForegroundWindow")
+
+	showWindow := user32.NewProc("ShowWindow")
+	const SW_RESTORE = 9
+
+	// Convert string to UTF16
+	u16Title, err := syscall.UTF16PtrFromString(title)
+	if err != nil {
+		return err
+	}
+
+	// Find the window by its title
+	hwnd, _, err := findWindow.Call(0, uintptr(unsafe.Pointer(u16Title)))
+	if hwnd == 0 {
+		logger.Log.Printf("ERROR: window not found: %v", err.Error())
+		return err
+	}
+
+	// Restore the window if minimized
+	showWindow.Call(hwnd, SW_RESTORE)
+
+	// Bring the window to the foreground
+	_, _, err = setForegroundWindow.Call(hwnd)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (obj *SystemService) initSystem(system_data models.SystemData) error {
@@ -260,9 +297,11 @@ func (obj *SystemService) Export(file_name string, file_path string) error {
 	err_channel := make(chan error)
 
 	wg.Add(1)
-	go func() error {
+	go func() {
 		defer wg.Done()
+
 		logger.Log.Println("Fetching login data")
+
 		//Get login data
 		login_service := InitBadgerLoginService()
 		login_service.Init()
@@ -271,17 +310,18 @@ func (obj *SystemService) Export(file_name string, file_path string) error {
 		if err != nil {
 			logger.Log.Printf("ERROR: %s", err.Error())
 			err_channel <- err
-			return err
 		} else {
 			export_data.LOGIN_DATA = login_data_list
-			return nil
 		}
+
 	}()
 
 	wg.Add(1)
-	go func() error {
+	go func() {
 		defer wg.Done()
-		//Get note data
+
+		logger.Log.Println("Fetching notes")
+
 		note_service := InitBadgerNoteService()
 		note_service.Init()
 		notes, err := note_service.GetAllNotes()
@@ -289,10 +329,8 @@ func (obj *SystemService) Export(file_name string, file_path string) error {
 		if err != nil {
 			logger.Log.Printf("ERROR: %s", err.Error())
 			err_channel <- err
-			return err
 		} else {
 			export_data.NOTE_DATA = notes
-			return nil
 		}
 	}()
 
@@ -302,7 +340,7 @@ func (obj *SystemService) Export(file_name string, file_path string) error {
 	}()
 
 	for err := range err_channel {
-		logger.Log.Fatal(err.Error())
+		logger.Log.Printf("ERROR: %s", err.Error())
 		return err
 	}
 
@@ -356,6 +394,8 @@ func (obj *SystemService) Export(file_name string, file_path string) error {
 }
 
 func (obj *SystemService) Import(file_name string, file_path string, master_password string) error {
+	os.RemoveAll(os.Getenv("STORAGE_PATH"))
+
 	logger.Log.Println("Importing data")
 	file, err := os.Open(file_path + "\\" + file_name)
 
@@ -418,13 +458,16 @@ func (obj *SystemService) Import(file_name string, file_path string, master_pass
 		err = login_service.importData(imported_data.LOGIN_DATA)
 		if err != nil {
 			logger.Log.Printf("ERROR: %s", err.Error())
+			// return err
 			err_channel <- err
 		}
+
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+
 		//Import note data
 		logger.Log.Println("Importing note data")
 		note_service := InitBadgerNoteService()
@@ -432,6 +475,7 @@ func (obj *SystemService) Import(file_name string, file_path string, master_pass
 		err = note_service.importData(imported_data.NOTE_DATA)
 		if err != nil {
 			logger.Log.Printf("ERROR: %s", err.Error())
+			// return err
 			err_channel <- err
 		}
 	}()
@@ -440,6 +484,12 @@ func (obj *SystemService) Import(file_name string, file_path string, master_pass
 		wg.Wait()
 		close(err_channel)
 	}()
+
+	for err := range err_channel {
+		if err != nil {
+			return err
+		}
+	}
 
 	logger.Log.Println("DONE")
 	return nil
