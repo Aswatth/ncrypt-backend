@@ -3,6 +3,7 @@ package controllers
 import (
 	"ncrypt/models"
 	"ncrypt/services"
+	"ncrypt/utils/jwt"
 	"ncrypt/utils/logger"
 	"net/http"
 
@@ -40,14 +41,14 @@ func (obj *NoteController) AddNote(ctx *gin.Context) {
 func (obj *NoteController) GetNote(ctx *gin.Context) {
 	created_date_time := ctx.Query("created_date_time")
 
-	if(created_date_time == "") {
+	if created_date_time == "" {
 		if data, err := obj.service.GetAllNotes(); err != nil {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
 			logger.Log.Printf("ERROR: %s", err.Error())
 			return
 		} else {
 			ctx.JSON(http.StatusOK, data)
-		}	
+		}
 	} else {
 		if data, err := obj.service.GetNote(created_date_time); err != nil {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
@@ -107,6 +108,7 @@ func (obj *NoteController) UpdateNote(ctx *gin.Context) {
 func (obj *NoteController) RegisterRoutes(rg *gin.RouterGroup) {
 	group := rg.Group("/note")
 
+	group.Use(jwt.ValidateAuthorization())
 	group.POST("", obj.AddNote)
 	group.GET("", obj.GetNote)
 	group.GET("/:created_date_time", obj.GetContent)
