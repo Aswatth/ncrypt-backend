@@ -201,7 +201,6 @@ func (obj *NoteService) recryptData(password_data map[string]string) error {
 
 func (obj *NoteService) importData(notes []models.Note) error {
 	logger.Log.Printf("Importing notes")
-	os.RemoveAll("data/" + os.Getenv("NOTE_DB_NAME"))
 
 	for _, note := range notes {
 		err := obj.database.AddData(note.CreatedDateTime, note)
