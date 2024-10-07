@@ -13,22 +13,18 @@ func GeneratePassword(digits bool, uppercase bool, special_char bool, length int
 
 	special_char_list := []rune{'!', '@', '#', '$', '%', '^', '&', '*'}
 
-	character_matrix := [][]rune{
-		{'a', 'b', 'c', 'd', 'e', 'f'},
-		{'g', 'h', 'i', 'd', 'e', 'f'},
-		{'m', 'n', 'o', 'p', 'q', 'r'},
-		{'s', 't', 'u', 'v', 'w', 'x'},
-		{'y', 'z', '0', '1', '2', '3'},
-		{'4', '5', '6', '7', '8', '9'},
-	}
+	character_list := []rune{
+		'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k', 'm', 'n', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+		'1', '2', '3', '4', '5', '6', '7', '8', '9',
+	} //Ambiguous characters like i,l,o and 0 are avoided
 
 	logger.Log.Println("Setting initial characters as per constraints")
 	if digits {
-		generated_password += strconv.Itoa(rand.Intn(10))
+		generated_password += strconv.Itoa(rand.Intn(9) + 1) //Generates random digits between 1 - 9
 	}
 
 	if uppercase {
-		generated_password += string(rune(rand.Intn(26) + 'A'))
+		generated_password += strings.ToUpper(string(character_list[rand.Intn(23)])) // Consider only available characters
 	}
 
 	if special_char {
@@ -37,24 +33,23 @@ func GeneratePassword(digits bool, uppercase bool, special_char bool, length int
 
 	logger.Log.Println("Randomly generating characters to match required password length")
 	for len(generated_password) <= length {
-		i := rand.Intn(len(character_matrix))
-		j := rand.Intn(len(character_matrix[i]))
+		i := rand.Intn(len(character_list))
 
 		should_be_special := rand.Intn(2)
 
 		//Random character is a digit
-		if character_matrix[i][j] >= '0' && character_matrix[i][j] <= '9' {
+		if character_list[i] >= '1' && character_list[i] <= '9' {
 			//Would map to special character above respective digit in keyboard
-			if should_be_special == 1 && special_char && character_matrix[i][j] >= '1' && character_matrix[i][j] <= '8' {
-				generated_password += string(special_char_list[(character_matrix[i][j]-'0')-1])
+			if should_be_special == 1 && special_char && character_list[i] >= '1' && character_list[i] <= '8' {
+				generated_password += string(special_char_list[(character_list[i]-'0')-1])
 			} else if digits {
-				generated_password += string(character_matrix[i][j])
+				generated_password += string(character_list[i])
 			}
-		} else if character_matrix[i][j] >= 'a' && character_matrix[i][j] <= 'z' { //Random character is an alphabet
+		} else if character_list[i] >= 'a' && character_list[i] <= 'z' { //Random character is an alphabet
 			if should_be_special == 1 && uppercase {
-				generated_password += strings.ToUpper(string(character_matrix[i][j]))
+				generated_password += strings.ToUpper(string(character_list[i]))
 			} else {
-				generated_password += string(character_matrix[i][j])
+				generated_password += string(character_list[i])
 			}
 		}
 	}
