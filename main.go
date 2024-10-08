@@ -7,17 +7,56 @@ import (
 	"ncrypt/utils"
 	"ncrypt/utils/logger"
 	"net/http"
+	"os"
+	"sort"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
+func deleteOldLogs() {
+	path := os.Getenv("LOG_FOLDER")
+
+	//Always keep 5 most recent logs
+	LOGS_TO_KEEP := 5
+
+	// Get list of all files
+	files, _ := os.ReadDir(path)
+
+	// Sort files based on modified time in descending order
+	sort.Slice(files, func(i, j int) bool {
+		info1, _ := files[i].Info()
+		info2, _ := files[j].Info()
+
+		return info1.ModTime().After(info2.ModTime())
+	})
+
+	count := 0
+	for _, file := range files {
+		if count >= LOGS_TO_KEEP {
+			// Delete files with .log type
+			if !file.IsDir() && strings.HasSuffix(file.Name(), ".log") {
+				err := os.Remove(path + "/" + file.Name())
+				if err != nil {
+					fmt.Println(err.Error())
+				}
+			}
+		}
+
+		count += 1
+	}
+}
+
 func main() {
 	fmt.Println("Welcome to Ncrpyt")
+
 	log.SetFlags(log.Lshortfile | log.LstdFlags)
 
 	//Loading env
-	godotenv.Load()
+	godotenv.Load(".env")
+
+	deleteOldLogs()
 
 	utils.AssignDynamicPort()
 
