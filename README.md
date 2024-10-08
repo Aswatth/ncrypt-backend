@@ -278,3 +278,5 @@ Features:
 - Import and export of login data and notes happen in parallel with the help go-routines.
 - On master password update, all encrypted data are re-encrypted in parallel.
 - Runs on dynamically assigned ports.
+
+To run tests please comment lines 51-65 in system_service.go to prevent UI instances for each test.
