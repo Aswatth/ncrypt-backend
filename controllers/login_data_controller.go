@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"fmt"
-	"ncrypt/models"
 	"ncrypt/services"
 	"ncrypt/utils/jwt"
 	"ncrypt/utils/logger"
@@ -21,7 +20,7 @@ func (obj *LoginDataController) Init() {
 }
 
 func (obj *LoginDataController) AddLoginData(ctx *gin.Context) {
-	var new_login_data models.Login
+	var new_login_data map[string]interface{}
 
 	//Check if given JSON is valid
 	if err := ctx.ShouldBindJSON(&new_login_data); err != nil {
@@ -30,7 +29,7 @@ func (obj *LoginDataController) AddLoginData(ctx *gin.Context) {
 		return
 	}
 
-	if err := obj.service.AddLoginData(&new_login_data); err != nil {
+	if err := obj.service.AddLoginData(new_login_data); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
 		logger.Log.Printf("ERROR: %s", err.Error())
 		return
@@ -92,7 +91,7 @@ func (obj *LoginDataController) DeleteLoginData(ctx *gin.Context) {
 func (obj *LoginDataController) UpdateLoginData(ctx *gin.Context) {
 	name := ctx.Param("name")
 
-	var login_data models.Login
+	var login_data map[string]interface{}
 
 	if err := ctx.ShouldBindJSON(&login_data); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
@@ -100,7 +99,7 @@ func (obj *LoginDataController) UpdateLoginData(ctx *gin.Context) {
 		return
 	}
 
-	if err := obj.service.UpdateLoginData(name, &login_data); err != nil {
+	if err := obj.service.UpdateLoginData(name, login_data); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
 		logger.Log.Printf("ERROR: %s", err.Error())
 		return

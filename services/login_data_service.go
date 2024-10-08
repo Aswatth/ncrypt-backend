@@ -112,7 +112,7 @@ func (obj *LoginDataService) GetAllLoginData() ([]models.Login, error) {
 	return login_data_list, nil
 }
 
-func (obj *LoginDataService) setLoginData(login_data *models.Login) error {
+func (obj *LoginDataService) setLoginData(login_data models.Login) error {
 
 	logger.Log.Printf("Checking for duplicate accounts")
 	//Check for duplicate account-username
@@ -154,10 +154,14 @@ func (obj *LoginDataService) setLoginData(login_data *models.Login) error {
 	return err
 }
 
-func (obj *LoginDataService) AddLoginData(login_data *models.Login) error {
+func (obj *LoginDataService) AddLoginData(login_data map[string]interface{}) error {
 	logger.Log.Printf("Adding login data")
 	logger.Log.Printf("Checking for duplicate data")
-	existing_data, err := obj.GetLoginData(login_data.Name)
+
+	var new_login_data models.Login
+	new_login_data.FromMap(login_data)
+
+	existing_data, err := obj.GetLoginData(new_login_data.Name)
 
 	if err != nil && err != badger.ErrKeyNotFound {
 		logger.Log.Printf("ERROR: %s", err.Error())
@@ -165,10 +169,10 @@ func (obj *LoginDataService) AddLoginData(login_data *models.Login) error {
 	}
 	if existing_data.Name != "" {
 		logger.Log.Printf("ERROR: %s", "CONFLICTING NAMES")
-		return errors.New(login_data.Name + " already exists")
+		return errors.New(new_login_data.Name + " already exists")
 	}
 
-	err = obj.setLoginData(login_data)
+	err = obj.setLoginData(new_login_data)
 
 	if err != nil {
 		logger.Log.Printf("ERROR: %s", err.Error())
@@ -178,19 +182,23 @@ func (obj *LoginDataService) AddLoginData(login_data *models.Login) error {
 	return err
 }
 
-func (obj *LoginDataService) UpdateLoginData(old_login_data_name string, login_data *models.Login) error {
+func (obj *LoginDataService) UpdateLoginData(old_login_data_name string, login_data map[string]interface{}) error {
 	logger.Log.Printf("Updating login data")
 
 	logger.Log.Printf("Checking for name conflicts")
-	if old_login_data_name != login_data.Name {
-		existing_data, err := obj.GetLoginData(login_data.Name)
+
+	var updated_login_data models.Login
+	updated_login_data.FromMap(login_data)
+
+	if old_login_data_name != updated_login_data.Name {
+		existing_data, err := obj.GetLoginData(updated_login_data.Name)
 
 		if err != nil && err != badger.ErrKeyNotFound {
 			logger.Log.Printf("ERROR: %s", err.Error())
 			return err
 		}
 		if existing_data.Name != "" {
-			err = errors.New(login_data.Name + " already exists")
+			err = errors.New(updated_login_data.Name + " already exists")
 			logger.Log.Printf("ERROR: %s", err.Error())
 			return err
 		}
@@ -211,16 +219,16 @@ func (obj *LoginDataService) UpdateLoginData(old_login_data_name string, login_d
 		logger.Log.Printf("ERROR: %s", err.Error())
 	}
 
-	for index := range len(login_data.Accounts) {
-		decrypted_data, err := encryptor.Decrypt(login_data.Accounts[index].Password, key+old_login_data_name+login_data.Accounts[index].Username)
+	for index := range len(updated_login_data.Accounts) {
+		decrypted_data, err := encryptor.Decrypt(updated_login_data.Accounts[index].Password, key+old_login_data_name+updated_login_data.Accounts[index].Username)
 
 		// login_data.Accounts[index].Password = decrypted_data
 		if err == nil {
-			login_data.Accounts[index].Password = decrypted_data
+			updated_login_data.Accounts[index].Password = decrypted_data
 		}
 	}
 
-	err = obj.setLoginData(login_data)
+	err = obj.setLoginData(updated_login_data)
 
 	if err != nil {
 		logger.Log.Printf("ERROR: %s", err.Error())
