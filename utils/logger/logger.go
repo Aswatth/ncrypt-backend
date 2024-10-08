@@ -13,8 +13,16 @@ var (
 )
 
 func init() {
-	os.Mkdir("logs", os.ModePerm)
-	logpath := "logs\\log-" + time.Now().Format(time.RFC3339) + ".log"
+	dir := "logs"
+	os.Mkdir(dir, os.ModePerm)
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		err := os.Mkdir(dir, os.ModePerm)
+		if err != nil {
+			panic("ERROR creating logs directory")
+		}
+	}
+
+	logpath := dir + "\\log-" + time.Now().Format(time.RFC3339) + ".log"
 	logpath = strings.ReplaceAll(logpath, ":", "-")
 
 	//    flag.Parse()
