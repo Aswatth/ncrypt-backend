@@ -11,12 +11,14 @@ API enpoints:
 <h3>System</h3>
 <table>
   <tr>
+    <th>Action<th>
     <th>Path</th>
     <th>Request data</th>
     <th>Description</th>
     <th>Need authentication</th>
   </tr>
   <tr>
+    <td>POST</td>
     <td>/system/setup</td>
     <td>
       "master_password": string, // Master password needed for initial setup
@@ -27,6 +29,34 @@ API enpoints:
         }
     </td>
     <td>Will be used for initial setup. Require master_password and auto_backup_setting data</td>
+    <td>No</td>
+  </tr>
+  <tr>
+    <td>POST</td>
+    <td>/system/signin</td>
+    <td>"master_password": string, // Master password for signing in</td>
+    <td>SIgn into the application</td>
+    <td>No</td>
+  </tr>
+  <tr>
+    <td>GET</td>
+    <td>/system/generate_password</td>
+    <td>-</td>
+    <td>Generates random password based on preferences</td>
+    <td>No</td>
+  </tr>
+  <tr>
+    <td>POST</td>
+    <td>/system/import</td>
+    <td>file_name: string<br>path: string<br>master_password: string</td>
+    <td>Import a given file from the specified path using the master_password to decrypt and load the file</td>
+    <td>No</td>
+  </tr>
+  <tr>
+    <td>GET</td>
+    <td>system/theme</td>
+    <td>-</td>
+    <td>Fetches theme(LIGHT, DARK or SYSTEM)</td>
     <td>No</td>
   </tr>
 </table>
