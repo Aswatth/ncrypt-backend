@@ -20,22 +20,6 @@ func (obj *MasterPasswordController) Init() {
 	logger.Log.Printf("Initialization complete!")
 }
 
-func (obj *MasterPasswordController) SetPassword(ctx *gin.Context) {
-	var data map[string]string
-
-	if err := ctx.ShouldBindJSON(&data); err != nil {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
-		logger.Log.Printf("ERROR: %s", err.Error())
-		return
-	} else if err := obj.service.SetMasterPassword(data["master_password"]); err != nil {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
-		logger.Log.Printf("ERROR: %s", err.Error())
-		return
-	}
-
-	ctx.Status(http.StatusOK)
-}
-
 func (obj *MasterPasswordController) UpdatePassword(ctx *gin.Context) {
 	var data map[string]string
 
@@ -82,6 +66,5 @@ func (obj *MasterPasswordController) RegisterRoutes(rg *gin.RouterGroup) {
 
 	group.Use(jwt.ValidateAuthorization())
 	group.POST("/validate", obj.ValidatePassword)
-	group.POST("", obj.SetPassword)
 	group.PUT("", obj.UpdatePassword)
 }
