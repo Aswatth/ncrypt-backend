@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"ncrypt/models"
 	"ncrypt/services"
 	"ncrypt/utils/jwt"
 	"ncrypt/utils/logger"
@@ -20,7 +19,7 @@ func (obj *NoteController) Init() {
 }
 
 func (obj *NoteController) AddNote(ctx *gin.Context) {
-	var new_note models.Note
+	var new_note map[string]interface{}
 
 	//Check if given JSON is valid
 	if err := ctx.ShouldBindJSON(&new_note); err != nil {
@@ -29,7 +28,7 @@ func (obj *NoteController) AddNote(ctx *gin.Context) {
 		return
 	}
 
-	if err := obj.service.AddNote(&new_note); err != nil {
+	if err := obj.service.AddNote(new_note); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
 		logger.Log.Printf("ERROR: %s", err.Error())
 		return
@@ -87,7 +86,7 @@ func (obj *NoteController) DeleteNote(ctx *gin.Context) {
 func (obj *NoteController) UpdateNote(ctx *gin.Context) {
 	created_date_time := ctx.Param("created_date_time")
 
-	var new_note models.Note
+	var new_note map[string]interface{}
 
 	//Check if given JSON is valid
 	if err := ctx.ShouldBindJSON(&new_note); err != nil {

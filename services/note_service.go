@@ -89,7 +89,7 @@ func (obj *NoteService) GetDecryptedContent(created_date_time string) (string, e
 	return decrypted_content, err
 }
 
-func (obj *NoteService) AddNote(note *models.Note) error {
+func (obj *NoteService) AddNote(new_note map[string]interface{}) error {
 	logger.Log.Printf("Adding note")
 	master_password_hash, err := obj.master_password_service.GetMasterPassword()
 
@@ -101,6 +101,9 @@ func (obj *NoteService) AddNote(note *models.Note) error {
 		}
 		return err
 	}
+
+	var note models.Note
+	note.FromMap(new_note)
 
 	existing_note, err := obj.GetNote(note.CreatedDateTime)
 	if err != nil && err != badger.ErrKeyNotFound {
@@ -126,7 +129,7 @@ func (obj *NoteService) AddNote(note *models.Note) error {
 
 	return err
 }
-func (obj *NoteService) UpdateNote(created_date_time string, updated_note models.Note) error {
+func (obj *NoteService) UpdateNote(created_date_time string, updated_note map[string]interface{}) error {
 	logger.Log.Printf("Updating note")
 	fetched_note, err := obj.GetNote(created_date_time)
 
@@ -141,15 +144,18 @@ func (obj *NoteService) UpdateNote(created_date_time string, updated_note models
 		return err
 	}
 
-	encrypted_content, err := encryptor.Encrypt(updated_note.Content, master_password+created_date_time)
+	var note models.Note
+	note.FromMap(updated_note)
+
+	encrypted_content, err := encryptor.Encrypt(note.Content, master_password+created_date_time)
 
 	if err == nil {
-		updated_note.Content = encrypted_content
+		note.Content = encrypted_content
 	}
 
-	updated_note.CreatedDateTime = fetched_note.CreatedDateTime
+	note.CreatedDateTime = fetched_note.CreatedDateTime
 
-	return obj.database.AddData(created_date_time, (&updated_note))
+	return obj.database.AddData(created_date_time, (&note))
 }
 
 func (obj *NoteService) DeleteNote(created_date_time string) error {

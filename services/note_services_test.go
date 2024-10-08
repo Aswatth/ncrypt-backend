@@ -25,17 +25,19 @@ func compareNote(t *testing.T, expected_note models.Note, actual_note models.Not
 func TestAddNote_With_Master_Password(t *testing.T) {
 	note_service_test_init()
 
-	note := &models.Note{
-		CreatedDateTime: "123",
-		Title:           "abc",
-		Content:         "my content",
-		Attributes:      models.Attributes{IsFavourite: true, RequireMasterPassword: false},
-	}
+	note_data := make(map[string]interface{})
+	note_data["created_date_time"] = "123"
+	note_data["title"] = "abc"
+	note_data["content"] = "my content"
+	note_data["attributes"] = map[string]interface{}{"isFavourite": true, "requireMasterPassword": false}
+
+	var note models.Note
+	note.FromMap(note_data)
 
 	note_service := new(NoteService)
 	note_service.Init()
 
-	err := note_service.AddNote(note)
+	err := note_service.AddNote(note_data)
 
 	if err != nil {
 		t.Error(err.Error())
@@ -47,19 +49,27 @@ func TestAddNote_With_Master_Password(t *testing.T) {
 		t.Error(err.Error())
 	}
 
-	compareNote(t, *note, *fetched_note)
+	compareNote(t, note, *fetched_note)
 
 	//Clean up
 	t.Cleanup(note_service_test_cleanup)
 }
 
 func TestAddNote_Without_Master_Password(t *testing.T) {
-	note := &models.Note{CreatedDateTime: "testing", Title: "test", Content: "this is a test", Attributes: models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+
+	note_data := make(map[string]interface{})
+	note_data["created_date_time"] = "testing"
+	note_data["title"] = "test"
+	note_data["content"] = "this is a test"
+	note_data["attributes"] = map[string]interface{}{"isFavourite": true, "requireMasterPassword": false}
+
+	var note models.Note
+	note.FromMap(note_data)
 
 	note_service := new(NoteService)
 	note_service.Init()
 
-	err := note_service.AddNote(note)
+	err := note_service.AddNote(note_data)
 
 	if err != nil {
 		if strings.ToUpper(err.Error()) != "MASTER_PASSWORD NOT SET" {
@@ -74,13 +84,25 @@ func TestAddNote_Without_Master_Password(t *testing.T) {
 func TestAddNote_DuplicateData(t *testing.T) {
 	note_service_test_init()
 
-	note := &models.Note{CreatedDateTime: "testing", Title: "test", Content: "this is a test", Attributes: models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
-	duplicate_note_data := &models.Note{CreatedDateTime: "testing", Title: "test", Content: "this is a test", Attributes: models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+	note_data := make(map[string]interface{})
+	note_data["created_date_time"] = "testing"
+	note_data["title"] = "test"
+	note_data["content"] = "this is a test"
+	note_data["attributes"] = map[string]interface{}{"isFavourite": true, "requireMasterPassword": false}
+
+	var note models.Note
+	note.FromMap(note_data)
+
+	duplicate_note_data := make(map[string]interface{})
+	duplicate_note_data["created_date_time"] = "testing"
+	duplicate_note_data["title"] = "test"
+	duplicate_note_data["content"] = "this is a test"
+	duplicate_note_data["attributes"] = map[string]interface{}{"isFavourite": true, "requireMasterPassword": false}
 
 	note_service := new(NoteService)
 	note_service.Init()
 
-	note_service.AddNote(note)
+	note_service.AddNote(note_data)
 
 	//Duplicate key with updated data
 	err := note_service.AddNote(duplicate_note_data)
@@ -96,12 +118,19 @@ func TestAddNote_DuplicateData(t *testing.T) {
 func TestGetNote(t *testing.T) {
 	note_service_test_init()
 
-	note := &models.Note{CreatedDateTime: "testing", Title: "test", Content: "this is a test", Attributes: models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+	note_data := make(map[string]interface{})
+	note_data["created_date_time"] = "testing"
+	note_data["title"] = "test"
+	note_data["content"] = "this is a test"
+	note_data["attributes"] = map[string]interface{}{"isFavourite": true, "requireMasterPassword": false}
+
+	var note models.Note
+	note.FromMap(note_data)
 
 	note_service := new(NoteService)
 	note_service.Init()
 
-	err := note_service.AddNote(note)
+	err := note_service.AddNote(note_data)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -112,7 +141,7 @@ func TestGetNote(t *testing.T) {
 		t.Error(err.Error())
 	}
 
-	compareNote(t, *note, *fetched_note)
+	compareNote(t, note, *fetched_note)
 
 	//Clean up
 	t.Cleanup(note_service_test_cleanup)
@@ -121,12 +150,19 @@ func TestGetNote(t *testing.T) {
 func TestGetAllNote_With_Single_Record(t *testing.T) {
 	note_service_test_init()
 
-	note := &models.Note{CreatedDateTime: "testing", Title: "test", Content: "this is a test", Attributes: models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+	note_data := make(map[string]interface{})
+	note_data["created_date_time"] = "testing"
+	note_data["title"] = "test"
+	note_data["content"] = "this is a test"
+	note_data["attributes"] = map[string]interface{}{"isFavourite": true, "requireMasterPassword": false}
+
+	var note models.Note
+	note.FromMap(note_data)
 
 	note_service := new(NoteService)
 	note_service.Init()
 
-	err := note_service.AddNote(note)
+	err := note_service.AddNote(note_data)
 
 	if err != nil {
 		t.Error(err.Error())
@@ -142,7 +178,7 @@ func TestGetAllNote_With_Single_Record(t *testing.T) {
 		t.Errorf("Mismatch in count\nExpected:\t%d\nActual:\t%d", 1, len(fetched_note_list))
 	}
 
-	compareNote(t, *note, fetched_note_list[0])
+	compareNote(t, note, fetched_note_list[0])
 
 	//Clean up
 	t.Cleanup(note_service_test_cleanup)
@@ -151,16 +187,27 @@ func TestGetAllNote_With_Single_Record(t *testing.T) {
 func TestGetAllNote_With_Multiple_Record(t *testing.T) {
 	note_service_test_init()
 
-	note_datas := []models.Note{
-		{CreatedDateTime: "testing1", Title: "test1", Content: "this is a test", Attributes: models.Attributes{IsFavourite: true, RequireMasterPassword: false}},
-		{CreatedDateTime: "testing2", Title: "test2", Content: "this is a test", Attributes: models.Attributes{IsFavourite: false, RequireMasterPassword: true}},
-	}
+	var note_data_list []map[string]interface{}
+
+	note_data_1 := make(map[string]interface{})
+	note_data_1["created_date_time"] = "testing1"
+	note_data_1["title"] = "test1"
+	note_data_1["content"] = "this is a test"
+	note_data_1["attributes"] = map[string]interface{}{"isFavourite": true, "requireMasterPassword": false}
+	note_data_list = append(note_data_list, note_data_1)
+
+	note_data_2 := make(map[string]interface{})
+	note_data_2["created_date_time"] = "testing2"
+	note_data_2["title"] = "test2"
+	note_data_2["content"] = "this is a test"
+	note_data_2["attributes"] = map[string]interface{}{"isFavourite": false, "requireMasterPassword": true}
+	note_data_list = append(note_data_list, note_data_2)
 
 	note_service := new(NoteService)
 	note_service.Init()
 
-	for _, note_data := range note_datas {
-		err := note_service.AddNote(&note_data)
+	for _, note_data := range note_data_list {
+		err := note_service.AddNote(note_data)
 
 		if err != nil {
 			t.Error(err.Error())
@@ -173,12 +220,14 @@ func TestGetAllNote_With_Multiple_Record(t *testing.T) {
 		t.Error(err.Error())
 	}
 
-	if len(fetched_note_list) != len(note_datas) {
-		t.Errorf("Mismatch in count\nExpected:\t%d\nActual:\t%d", len(note_datas), len(fetched_note_list))
+	if len(fetched_note_list) != len(note_data_list) {
+		t.Errorf("Mismatch in count\nExpected:\t%d\nActual:\t%d", len(note_data_list), len(fetched_note_list))
 	}
 
-	for index := range note_datas {
-		compareNote(t, note_datas[index], fetched_note_list[index])
+	for index := range note_data_list {
+		var note models.Note
+		note.FromMap(note_data_list[index])
+		compareNote(t, note, fetched_note_list[index])
 	}
 
 	//Clean up
@@ -188,12 +237,19 @@ func TestGetAllNote_With_Multiple_Record(t *testing.T) {
 func TestDeleteNote(t *testing.T) {
 	note_service_test_init()
 
-	note := &models.Note{CreatedDateTime: "testing", Title: "test", Content: "this is a test", Attributes: models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+	note_data := make(map[string]interface{})
+	note_data["created_date_time"] = "testing"
+	note_data["title"] = "test"
+	note_data["content"] = "this is a test"
+	note_data["attributes"] = map[string]interface{}{"isFavourite": true, "requireMasterPassword": false}
+
+	var note models.Note
+	note.FromMap(note_data)
 
 	note_service := new(NoteService)
 	note_service.Init()
 
-	note_service.AddNote(note)
+	note_service.AddNote(note_data)
 
 	note_service.DeleteNote(note.CreatedDateTime)
 
@@ -209,16 +265,28 @@ func TestDeleteNote(t *testing.T) {
 func TestUpdateNote(t *testing.T) {
 	note_service_test_init()
 
-	note := &models.Note{CreatedDateTime: "testing", Title: "test", Content: "this is a test", Attributes: models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+	note_data := make(map[string]interface{})
+	note_data["created_date_time"] = "testing"
+	note_data["title"] = "test"
+	note_data["content"] = "this is a test"
+	note_data["attributes"] = map[string]interface{}{"isFavourite": true, "requireMasterPassword": false}
+
+	var note models.Note
+	note.FromMap(note_data)
 
 	note_service := new(NoteService)
 	note_service.Init()
 
-	note_service.AddNote(note)
+	note_service.AddNote(note_data)
 
 	//Updating accounts only
-	note = &models.Note{CreatedDateTime: "testing", Title: "test_update", Content: "this is a test update", Attributes: models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
-	err := note_service.UpdateNote(note.CreatedDateTime, *note)
+	note_data["created_date_time"] = "testing"
+	note_data["title"] = "test_update"
+	note_data["content"] = "this is a test update"
+	note_data["attributes"] = map[string]interface{}{"isFavourite": true, "requireMasterPassword": false}
+	note.FromMap(note_data)
+
+	err := note_service.UpdateNote(note.CreatedDateTime, note_data)
 
 	if err != nil {
 		t.Error(err.Error())
@@ -230,7 +298,7 @@ func TestUpdateNote(t *testing.T) {
 		t.Error(err.Error())
 	}
 
-	compareNote(t, *note, *fetched_note)
+	compareNote(t, note, *fetched_note)
 
 	//Clean up
 	t.Cleanup(note_service_test_cleanup)
@@ -239,28 +307,41 @@ func TestUpdateNote(t *testing.T) {
 func TestUpdateNote_ChangeAll(t *testing.T) {
 	note_service_test_init()
 
-	note := &models.Note{CreatedDateTime: "testing", Title: "test", Content: "this is a test", Attributes: models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+	note_data := make(map[string]interface{})
+	note_data["created_date_time"] = "testing"
+	note_data["title"] = "test"
+	note_data["content"] = "this is a test"
+	note_data["attributes"] = map[string]interface{}{"isFavourite": true, "requireMasterPassword": false}
+
+	var note models.Note
+	note.FromMap(note_data)
 
 	note_service := new(NoteService)
 	note_service.Init()
 
-	note_service.AddNote(note)
+	note_service.AddNote(note_data)
 
 	//Updating entire data
-	updated_note := &models.Note{CreatedDateTime: "testing", Title: "test", Content: "this is a test", Attributes: models.Attributes{IsFavourite: false, RequireMasterPassword: true}}
-	err := note_service.UpdateNote(note.CreatedDateTime, *updated_note)
+	note_data["created_date_time"] = "testing"
+	note_data["title"] = "test_update"
+	note_data["content"] = "this is a test updated"
+	note_data["attributes"] = map[string]interface{}{"isFavourite": false, "requireMasterPassword": false}
+
+	note.FromMap(note_data)
+
+	err := note_service.UpdateNote(note.CreatedDateTime, note_data)
 
 	if err != nil {
 		t.Error(err.Error())
 	}
 
-	fetched_data, err := note_service.GetNote(updated_note.CreatedDateTime)
+	fetched_data, err := note_service.GetNote(note.CreatedDateTime)
 
 	if err != nil {
 		t.Error(err.Error())
 	}
 
-	compareNote(t, *updated_note, *fetched_data)
+	compareNote(t, note, *fetched_data)
 
 	//Clean up
 	t.Cleanup(note_service_test_cleanup)
@@ -269,13 +350,21 @@ func TestUpdateNote_ChangeAll(t *testing.T) {
 func TestGetDecryptedContent_ValidCreatedDateTime(t *testing.T) {
 	note_service_test_init()
 
-	note := &models.Note{CreatedDateTime: "testing", Title: "test", Content: "this is a test", Attributes: models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+	note_data := make(map[string]interface{})
+	note_data["created_date_time"] = "testing"
+	note_data["title"] = "test"
+	note_data["content"] = "this is a test"
+	note_data["attributes"] = map[string]interface{}{"isFavourite": true, "requireMasterPassword": false}
+
+	var note models.Note
+	note.FromMap(note_data)
+
 	expected_content := note.Content
 
 	note_service := new(NoteService)
 	note_service.Init()
 
-	err := note_service.AddNote(note)
+	err := note_service.AddNote(note_data)
 
 	if err != nil {
 		t.Error(err.Error())
@@ -298,12 +387,19 @@ func TestGetDecryptedContent_ValidCreatedDateTime(t *testing.T) {
 func TestGetDecryptedContent_InvalidCreatedDateTime(t *testing.T) {
 	note_service_test_init()
 
-	note := &models.Note{CreatedDateTime: "testing", Title: "test", Content: "this is a test", Attributes: models.Attributes{IsFavourite: true, RequireMasterPassword: false}}
+	note_data := make(map[string]interface{})
+	note_data["created_date_time"] = "testing"
+	note_data["title"] = "test"
+	note_data["content"] = "this is a test"
+	note_data["attributes"] = map[string]interface{}{"isFavourite": true, "requireMasterPassword": false}
+
+	var note models.Note
+	note.FromMap(note_data)
 
 	note_service := new(NoteService)
 	note_service.Init()
 
-	err := note_service.AddNote(note)
+	err := note_service.AddNote(note_data)
 
 	if err != nil {
 		t.Error(err.Error())
@@ -366,16 +462,27 @@ func TestNoteRecrpyt(t *testing.T) {
 		t.Error(err.Error())
 	}
 
-	note_datas := []models.Note{
-		{CreatedDateTime: "testing1", Title: "test1", Content: "this is a test1", Attributes: models.Attributes{IsFavourite: true, RequireMasterPassword: true}},
-		{CreatedDateTime: "testing2", Title: "test2", Content: "this is a test2", Attributes: models.Attributes{IsFavourite: false, RequireMasterPassword: false}},
-	}
+	var note_data_list []map[string]interface{}
+
+	note_data_1 := make(map[string]interface{})
+	note_data_1["created_date_time"] = "testing1"
+	note_data_1["title"] = "test1"
+	note_data_1["content"] = "this is a test"
+	note_data_1["attributes"] = map[string]interface{}{"isFavourite": true, "requireMasterPassword": false}
+	note_data_list = append(note_data_list, note_data_1)
+
+	note_data_2 := make(map[string]interface{})
+	note_data_2["created_date_time"] = "testing2"
+	note_data_2["title"] = "test2"
+	note_data_2["content"] = "this is a test"
+	note_data_2["attributes"] = map[string]interface{}{"isFavourite": false, "requireMasterPassword": true}
+	note_data_list = append(note_data_list, note_data_2)
 
 	note_service := new(NoteService)
 	note_service.Init()
 
-	for _, note_data := range note_datas {
-		note_service.AddNote(&note_data)
+	for _, note_data := range note_data_list {
+		note_service.AddNote(note_data)
 	}
 
 	data := make(map[string]string)
@@ -394,8 +501,8 @@ func TestNoteRecrpyt(t *testing.T) {
 		t.Error(err.Error())
 	}
 
-	if len(fetched_data_list) != len(note_datas) {
-		t.Errorf("Mismatch in count\nExpected:\t%d\nActual:\t%d", len(note_datas), len(fetched_data_list))
+	if len(fetched_data_list) != len(note_data_list) {
+		t.Errorf("Mismatch in count\nExpected:\t%d\nActual:\t%d", len(note_data_list), len(fetched_data_list))
 	}
 
 	//Clean up
