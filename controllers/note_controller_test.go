@@ -118,7 +118,7 @@ func TestAddNote_DuplicateData(t *testing.T) {
 	note_data["created_date_time"] = "123"
 	note_data["title"] = "abc"
 	note_data["content"] = "my content"
-	note_data["attributes"] = map[string]interface{}{"isFavourite": true, "requireMasterPassword": false}
+	note_data["attributes"] = map[string]interface{}{"is_favourite": true, "require_master_password": false}
 
 	var note models.Note
 	note.FromMap(note_data)
@@ -167,7 +167,7 @@ func TestGetNote(t *testing.T) {
 	note_data["created_date_time"] = "123"
 	note_data["title"] = "abc"
 	note_data["content"] = "my content"
-	note_data["attributes"] = map[string]interface{}{"isFavourite": true, "requireMasterPassword": false}
+	note_data["attributes"] = map[string]interface{}{"is_favourite": true, "require_master_password": false}
 
 	var note models.Note
 	note.FromMap(note_data)
@@ -224,7 +224,7 @@ func TestGetAllNote_With_Single_Record(t *testing.T) {
 	note_data["created_date_time"] = "123"
 	note_data["title"] = "abc"
 	note_data["content"] = "my content"
-	note_data["attributes"] = map[string]interface{}{"isFavourite": true, "requireMasterPassword": false}
+	note_data["attributes"] = map[string]interface{}{"is_favourite": true, "require_master_password": false}
 
 	var note models.Note
 	note.FromMap(note_data)
@@ -283,14 +283,14 @@ func TestGetAllNote_With_Multiple_Record(t *testing.T) {
 	note_data_1["created_date_time"] = "testing1"
 	note_data_1["title"] = "test1"
 	note_data_1["content"] = "this is a test"
-	note_data_1["attributes"] = map[string]interface{}{"isFavourite": true, "requireMasterPassword": false}
+	note_data_1["attributes"] = map[string]interface{}{"is_favourite": true, "require_master_password": false}
 	note_data_list = append(note_data_list, note_data_1)
 
 	note_data_2 := make(map[string]interface{})
 	note_data_2["created_date_time"] = "testing2"
 	note_data_2["title"] = "test2"
 	note_data_2["content"] = "this is a test"
-	note_data_2["attributes"] = map[string]interface{}{"isFavourite": false, "requireMasterPassword": true}
+	note_data_2["attributes"] = map[string]interface{}{"is_favourite": false, "require_master_password": true}
 	note_data_list = append(note_data_list, note_data_2)
 
 	for _, note_data := range note_data_list {
@@ -352,7 +352,7 @@ func TestDeleteNote(t *testing.T) {
 	note_data["created_date_time"] = "123"
 	note_data["title"] = "abc"
 	note_data["content"] = "my content"
-	note_data["attributes"] = map[string]interface{}{"isFavourite": true, "requireMasterPassword": false}
+	note_data["attributes"] = map[string]interface{}{"is_favourite": true, "require_master_password": false}
 
 	var note models.Note
 	note.FromMap(note_data)
@@ -399,7 +399,7 @@ func TestUpdateNote(t *testing.T) {
 	note_data["created_date_time"] = "123"
 	note_data["title"] = "abc"
 	note_data["content"] = "my content"
-	note_data["attributes"] = map[string]interface{}{"isFavourite": true, "requireMasterPassword": false}
+	note_data["attributes"] = map[string]interface{}{"is_favourite": true, "require_master_password": false}
 
 	var note models.Note
 	note.FromMap(note_data)
@@ -454,7 +454,7 @@ func TestUpdateNote_ChangeAll(t *testing.T) {
 	note_data["created_date_time"] = "123"
 	note_data["title"] = "abc"
 	note_data["content"] = "my content"
-	note_data["attributes"] = map[string]interface{}{"isFavourite": true, "requireMasterPassword": false}
+	note_data["attributes"] = map[string]interface{}{"is_favourite": true, "require_master_password": false}
 
 	var note models.Note
 	note.FromMap(note_data)
@@ -511,7 +511,7 @@ func TestGetDecryptedContent_ValidCreatedDateTime(t *testing.T) {
 	note_data["created_date_time"] = "123"
 	note_data["title"] = "abc"
 	note_data["content"] = "my content"
-	note_data["attributes"] = map[string]interface{}{"isFavourite": true, "requireMasterPassword": false}
+	note_data["attributes"] = map[string]interface{}{"is_favourite": true, "require_master_password": false}
 
 	var note models.Note
 	note.FromMap(note_data)
@@ -572,7 +572,7 @@ func TestGetDecryptedContent_InvalidCreatedDateTime(t *testing.T) {
 	note_data["created_date_time"] = "123"
 	note_data["title"] = "abc"
 	note_data["content"] = "my content"
-	note_data["attributes"] = map[string]interface{}{"isFavourite": true, "requireMasterPassword": false}
+	note_data["attributes"] = map[string]interface{}{"is_favourite": true, "require_master_password": false}
 
 	var note models.Note
 	note.FromMap(note_data)
