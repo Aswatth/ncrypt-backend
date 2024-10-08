@@ -2,9 +2,9 @@ package models
 
 type Note struct {
 	CreatedDateTime string     `json:"created_date_time" bson:"created_date_time"`
-	Title       string     `json:"title" bson:"title"`
-	Content     string     `json:"content" bson:"content"`
-	Attributes  Attributes `json:"attributes" bson:"attributes"`
+	Title           string     `json:"title" bson:"title"`
+	Content         string     `json:"content" bson:"content"`
+	Attributes      Attributes `json:"attributes" bson:"attributes"`
 }
 
 func (obj *Note) FromMap(data map[string]interface{}) *Note {
