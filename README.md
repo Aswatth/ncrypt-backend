@@ -278,5 +278,13 @@ Features:
 - Import and export of login data and notes happen in parallel with the help go-routines.
 - On master password update, all encrypted data are re-encrypted in parallel.
 - Runs on dynamically assigned ports.
+- Maintains atmost 5 logs and automatically deletes older logs.
 
 To run tests please comment lines 51-65 in system_service.go to prevent UI instances for each test.
+
+App icon: <a href="https://www.flaticon.com/free-icons/security" title="security icons">Security icons created by Freepik - Flaticon</a>
+
+Thanks to:
+- <a href="https://github.com/skandansn"> Skandan </a>
+- <a href="https://github.com/shishirkallapur"> Shishir </a>
+for their valuable inputs.
