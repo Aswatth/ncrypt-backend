@@ -16,7 +16,7 @@ import (
 )
 
 func deleteOldLogs() {
-	path := os.Getenv("LOG_FOLDER")
+	path := "logs"
 
 	//Always keep 5 most recent logs
 	LOGS_TO_KEEP := 5
